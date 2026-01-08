@@ -50,6 +50,15 @@ pub mod save {
             }
         }
 
+        /// Get a reference to the event flags for a specific slot
+        pub fn get_event_flags(&self, index: usize) -> Option<&[u8]> {
+            match self {
+                SaveType::Unknown => None,
+                SaveType::PC(pc_save) => Some(&pc_save.save_slots[index].save_slot.event_flags.flags),
+                SaveType::PlayStation(ps_save) => Some(&ps_save.save_slots[index].event_flags.flags),
+            }
+        }
+
         pub fn get_character_steam_id(&self, index: usize) -> u64 {
             match self {
                 SaveType::Unknown => panic!("Why are we here?"),
