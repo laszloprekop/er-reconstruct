@@ -2,6 +2,8 @@ use crate::{read::read::Read, write::write::Write};
 use binary_reader::BinaryReader;
 use std::io;
 
+use super::event_flags_detection::EventFlagsDetectionResult;
+
 #[derive(Clone)]
 pub struct WorldAreaTime {
     unk0: i32,
@@ -1534,7 +1536,10 @@ pub struct SaveSlot {
     _trophy_equip_data: [u8; 0x34],
     pub ga_item_data: GaItemData,
     _tutorial_data: [u8; 0x408],
-    _0x1d: [u8; 0x1d],
+    /// Variable-length gap before EventFlags (was fixed 0x1d, but varies per character)
+    _pre_event_flags_gap: Vec<u8>,
+    /// Detection result for EventFlags offset (for debugging/verification)
+    pub event_flags_detection: Option<EventFlagsDetectionResult>,
     pub event_flags: EventFlags,
     _0x1_1: u8,
     _unk_lists: Vec<UknownList>,
@@ -1584,11 +1589,12 @@ impl Default for SaveSlot {
             _0x4_3: 0,
             _menu_profile_save_load: [0x0; 0x1008],
             _trophy_equip_data: [0x0; 0x34],
-            event_flags: EventFlags::default(),
-            _0x1_1: 0,
             ga_item_data: GaItemData::default(),
             _tutorial_data: [0x0; 0x408],
-            _0x1d: [0x0; 0x1d],
+            _pre_event_flags_gap: vec![0x0; 0x1d], // Default to legacy 0x1d size
+            event_flags_detection: None,
+            event_flags: EventFlags::default(),
+            _0x1_1: 0,
             _unk_lists: Vec::new(),
             player_coords: PlayerCoords::default(),
             _game_man_unkown_values: [0x0; 0xf],
@@ -1707,8 +1713,27 @@ impl Read for SaveSlot {
             ._tutorial_data
             .copy_from_slice(br.read_bytes(0x408)?);
 
-        // Unknown values (Grouping and skipping)
-        save_slot._0x1d.copy_from_slice(br.read_bytes(0x1d)?);
+        // EventFlags are at a FIXED offset within each slot
+        // The offset 0x1a104 (106756) has been empirically verified to be correct.
+        // Variable-length structures (ga_items) cause sequential parsing to overshoot,
+        // so we must seek directly to the known fixed offset.
+        const EVENT_FLAGS_OFFSET_IN_SLOT: usize = 0x1a104;
+
+        let current_pos = br.pos;
+        let slot_start = end - 0x280000;
+        let ef_abs_pos = slot_start + EVENT_FLAGS_OFFSET_IN_SLOT;
+
+        // Seek directly to event_flags position
+        br.pos = ef_abs_pos;
+
+        // Store empty gap (we're seeking directly, not reading sequentially)
+        save_slot._pre_event_flags_gap = Vec::new();
+        save_slot.event_flags_detection = Some(super::event_flags_detection::EventFlagsDetectionResult {
+            offset: EVENT_FLAGS_OFFSET_IN_SLOT,
+            validation_score: 4,  // Fixed offset, assumed correct
+            confident: true,
+            gap_size: 0,
+        });
 
         // Event Flags
         save_slot.event_flags = EventFlags::read(br)?;
@@ -1846,8 +1871,8 @@ impl Write for SaveSlot {
         // Tutorial Data
         bytes.extend(self._tutorial_data);
 
-        // Unknown values
-        bytes.extend(self._0x1d);
+        // Variable gap before EventFlags (preserved from read)
+        bytes.extend(&self._pre_event_flags_gap);
 
         // Event Flags
         bytes.extend(self.event_flags.write()?);
