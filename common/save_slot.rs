@@ -1713,27 +1713,34 @@ impl Read for SaveSlot {
             ._tutorial_data
             .copy_from_slice(br.read_bytes(0x408)?);
 
-        // EventFlags are at a FIXED offset within each slot
-        // The offset 0x1a104 (106756) has been empirically verified to be correct.
-        // Variable-length structures (ga_items) cause sequential parsing to overshoot,
-        // so we must seek directly to the known fixed offset.
-        const EVENT_FLAGS_OFFSET_IN_SLOT: usize = 0x1a104;
+        // EventFlags offset is DYNAMIC - varies per character save
+        // We use validation-based detection to find the correct offset
+        // Search range: 0x12000-0x15000 based on empirical testing across save files
+        const SEARCH_START: usize = 0x12000;
+        const FALLBACK_OFFSET: usize = 0x12B00;  // Most common offset from testing
 
-        let current_pos = br.pos;
         let slot_start = end - 0x280000;
-        let ef_abs_pos = slot_start + EVENT_FLAGS_OFFSET_IN_SLOT;
 
-        // Seek directly to event_flags position
+        // Read slot data for detection (we need to scan the whole slot)
+        let saved_pos = br.pos;
+        br.pos = slot_start;
+        let slot_data = br.read_bytes(0x280000)?;
+
+        // Detect event flags offset using validation flags
+        let detection = super::event_flags_detection::detect_event_flags_offset_with_fallback(
+            &slot_data,
+            SEARCH_START,
+            FALLBACK_OFFSET,
+        );
+
+        let ef_abs_pos = slot_start + detection.offset;
+
+        // Seek to detected event_flags position
         br.pos = ef_abs_pos;
 
-        // Store empty gap (we're seeking directly, not reading sequentially)
+        // Store detection result
         save_slot._pre_event_flags_gap = Vec::new();
-        save_slot.event_flags_detection = Some(super::event_flags_detection::EventFlagsDetectionResult {
-            offset: EVENT_FLAGS_OFFSET_IN_SLOT,
-            validation_score: 4,  // Fixed offset, assumed correct
-            confident: true,
-            gap_size: 0,
-        });
+        save_slot.event_flags_detection = Some(detection);
 
         // Event Flags
         save_slot.event_flags = EventFlags::read(br)?;
