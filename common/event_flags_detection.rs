@@ -5,9 +5,10 @@
 //! detection to locate the EventFlags section reliably.
 //!
 //! The algorithm searches for known grace discovery flags that should be set
-//! for any character past the tutorial area.
+//! for any character past the tutorial area, AND verifies that late-game graces
+//! are NOT set (to eliminate false positive matches).
 
-/// Known grace flags used to validate EventFlags offset detection.
+/// Known grace flags used to validate EventFlags offset detection (POSITIVE).
 /// These graces should be discovered by any character past the tutorial.
 ///
 /// Format: (flag_id, byte_offset_in_event_flags, bit_position, name)
@@ -16,6 +17,24 @@ pub const VALIDATION_FLAGS: &[(u32, u32, u8, &str)] = &[
     (71801, 2725, 6, "Stranded Graveyard"),
     (76100, 3262, 3, "The First Step"),
     (76101, 3262, 2, "Church of Elleh"),
+];
+
+/// Late-game grace flags used for NEGATIVE validation.
+/// These graces require significant progression and should NOT be set
+/// for characters that have just completed the tutorial.
+/// If these ARE set at a candidate offset, it's a false positive.
+///
+/// Format: (flag_id, byte_offset_in_event_flags, bit_position, name)
+pub const NEGATIVE_VALIDATION_FLAGS: &[(u32, u32, u8, &str)] = &[
+    // Leyndell Capital - requires 2 Great Runes
+    (76223, 3277, 0, "Fortified Manor, First Floor"),
+    (76224, 3278, 7, "East Capital Rampart"),
+    (76225, 3278, 6, "Divine Bridge"),
+    // Mountaintops of the Giants - very late game
+    (76300, 3287, 3, "Zamor Ruins"),
+    (76301, 3287, 2, "Ancient Snow Valley Ruins"),
+    // Haligtree - endgame optional area
+    (76350, 3293, 5, "Haligtree Town"),
 ];
 
 /// Event flags section size (constant across all saves)
@@ -61,6 +80,10 @@ pub fn flag_id_to_bit_position(flag_id: u32) -> u8 {
 
 /// Detect the EventFlags offset by searching for known grace flag patterns.
 ///
+/// Uses positive validation (tutorial graces that MUST be set) as the primary
+/// criterion, and negative validation (late-game graces) as a tie-breaker
+/// to eliminate false positives when multiple offsets match positive flags.
+///
 /// # Arguments
 /// * `slot_data` - Raw bytes of the character slot
 /// * `search_start` - Byte offset to start searching from (typically after tutorial_data)
@@ -73,43 +96,100 @@ pub fn detect_event_flags_offset(slot_data: &[u8], search_start: usize) -> Event
     let search_end = (search_start + max_search).min(slot_data.len().saturating_sub(EVENT_FLAGS_SIZE));
 
     // Minimum offset to avoid false positives from early data
-    // The gap between tutorial_data and event_flags is typically 1000-3000 bytes
     let min_offset = 500;
     let actual_start = search_start.max(min_offset);
 
-    let mut best_offset = actual_start;
-    let mut best_score = 0;
+    // Phase 1: Find ALL offsets where all positive flags match
+    let mut candidates: Vec<(usize, usize)> = Vec::new(); // (offset, negative_score)
 
-    // Search for the offset where validation flags match
     for test_offset in actual_start..search_end {
-        let mut score = 0;
+        let mut positive_score = 0;
 
+        // Check positive flags (must ALL be SET)
         for &(_flag_id, byte_offset, bit_pos, _name) in VALIDATION_FLAGS {
             let abs_pos = test_offset + byte_offset as usize;
-
             if abs_pos < slot_data.len() {
                 let byte = slot_data[abs_pos];
                 if (byte & (1 << bit_pos)) != 0 {
-                    score += 1;
+                    positive_score += 1;
                 }
             }
         }
 
-        if score > best_score {
-            best_score = score;
-            best_offset = test_offset;
-
-            // If all validation flags match, we're confident
-            if best_score == VALIDATION_FLAGS.len() {
-                break;
+        // Only consider offsets where ALL positive flags match
+        if positive_score == VALIDATION_FLAGS.len() {
+            // Count negative flags that are NOT set (higher = more likely correct)
+            let mut negative_score = 0;
+            for &(_flag_id, byte_offset, bit_pos, _name) in NEGATIVE_VALIDATION_FLAGS {
+                let abs_pos = test_offset + byte_offset as usize;
+                if abs_pos < slot_data.len() {
+                    let byte = slot_data[abs_pos];
+                    if (byte & (1 << bit_pos)) == 0 {
+                        negative_score += 1;
+                    }
+                }
             }
+
+            candidates.push((test_offset, negative_score));
+
+            // If all negative flags are also NOT set, this is a perfect match for early-game
+            if negative_score == NEGATIVE_VALIDATION_FLAGS.len() {
+                // Found perfect match - use this one
+                return EventFlagsDetectionResult {
+                    offset: test_offset,
+                    validation_score: VALIDATION_FLAGS.len(),
+                    confident: true,
+                    gap_size: test_offset.saturating_sub(search_start),
+                };
+            }
+        }
+    }
+
+    // Phase 2: If no perfect match, pick candidate with highest negative score
+    // (most late-game graces NOT set = most likely correct offset)
+    if !candidates.is_empty() {
+        // Sort by negative score descending, then by offset ascending (prefer earlier)
+        candidates.sort_by(|a, b| {
+            b.1.cmp(&a.1).then_with(|| a.0.cmp(&b.0))
+        });
+
+        let (best_offset, best_neg_score) = candidates[0];
+
+        return EventFlagsDetectionResult {
+            offset: best_offset,
+            validation_score: VALIDATION_FLAGS.len(),
+            confident: best_neg_score >= NEGATIVE_VALIDATION_FLAGS.len() / 2,
+            gap_size: best_offset.saturating_sub(search_start),
+        };
+    }
+
+    // Phase 3: No perfect positive match - fall back to best partial match
+    let mut best_offset = actual_start;
+    let mut best_positive_score = 0;
+
+    for test_offset in actual_start..search_end {
+        let mut positive_score = 0;
+
+        for &(_flag_id, byte_offset, bit_pos, _name) in VALIDATION_FLAGS {
+            let abs_pos = test_offset + byte_offset as usize;
+            if abs_pos < slot_data.len() {
+                let byte = slot_data[abs_pos];
+                if (byte & (1 << bit_pos)) != 0 {
+                    positive_score += 1;
+                }
+            }
+        }
+
+        if positive_score > best_positive_score {
+            best_positive_score = positive_score;
+            best_offset = test_offset;
         }
     }
 
     EventFlagsDetectionResult {
         offset: best_offset,
-        validation_score: best_score,
-        confident: best_score == VALIDATION_FLAGS.len(),
+        validation_score: best_positive_score,
+        confident: false,
         gap_size: best_offset.saturating_sub(search_start),
     }
 }
