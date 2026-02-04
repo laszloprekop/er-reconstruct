@@ -11,9 +11,7 @@
 // Re-export constants from the shared crate
 pub use wasm_event_flags::{
     POSITIVE_VALIDATION_FLAGS,
-    NEGATIVE_VALIDATION_FLAGS,
     SEARCH_START,
-    EVENT_FLAGS_SIZE,
 };
 
 /// Legacy constant name for backward compatibility

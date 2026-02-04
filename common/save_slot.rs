@@ -1722,7 +1722,7 @@ impl Read for SaveSlot {
         let slot_start = end - 0x280000;
 
         // Read slot data for detection (we need to scan the whole slot)
-        let saved_pos = br.pos;
+        let _saved_pos = br.pos;
         br.pos = slot_start;
         let slot_data = br.read_bytes(0x280000)?;
 
