@@ -4,9 +4,12 @@
 //! The same detection algorithm is used by both ER-save-Editor (native) and
 //! elden-map (via WASM).
 //!
-//! The algorithm searches for known grace discovery flags that should be set
-//! for any character past the tutorial area, AND verifies that late-game graces
-//! are NOT set (to eliminate false positive matches).
+//! Primary: Structural computation — sequentially parses all save sections
+//! from GaItems through TutorialData, then adds the constant 29-byte gap.
+//! Works for all characters including brand-new ones with zero graces.
+//!
+//! Fallback: Content-based search — scans for grace flag patterns.
+//! Only used if structural computation fails (data corruption).
 
 // Re-export constants from the shared crate
 pub use wasm_event_flags::{
@@ -79,8 +82,8 @@ pub fn detect_event_flags_offset_with_fallback(
 ) -> EventFlagsDetectionResult {
     let result = detect_event_flags_offset(slot_data, search_start);
 
-    // If we matched at least 2 flags, trust the detection
-    if result.validation_score >= 2 {
+    // Trust the detection if confident (structural detection) or if grace flags validate
+    if result.confident || result.validation_score >= 2 {
         result
     } else {
         // Fall back to expected offset
