@@ -147,6 +147,6 @@ mod tests {
     fn test_constants_match_shared() {
         use crate::db::pickup_flags::EVENT_FLAGS_SIZE;
         assert_eq!(EVENT_FLAGS_SIZE, 0x1bf99f);
-        assert_eq!(SEARCH_START, 0x12000);
+        assert_eq!(SEARCH_START, 0x30000);
     }
 }

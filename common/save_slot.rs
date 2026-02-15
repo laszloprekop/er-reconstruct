@@ -1715,9 +1715,9 @@ impl Read for SaveSlot {
 
         // EventFlags offset is DYNAMIC - varies per character save
         // We use validation-based detection to find the correct offset
-        // Search range: 0x12000-0x15000 based on empirical testing across save files
-        const SEARCH_START: usize = 0x12000;
-        const FALLBACK_OFFSET: usize = 0x12B00;  // Most common offset from testing
+        // Search range: 0x30000+ (real EF is at ~222K, inventory data at ~76K causes false positives)
+        const SEARCH_START: usize = 0x30000;
+        const FALLBACK_OFFSET: usize = 0x36500;  // ~222K range based on empirical testing
 
         let slot_start = end - 0x280000;
 
