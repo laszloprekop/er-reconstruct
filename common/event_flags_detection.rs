@@ -4,12 +4,12 @@
 //! The same detection algorithm is used by both ER-save-Editor (native) and
 //! elden-map (via WASM).
 //!
-//! Primary: Structural computation — sequentially parses all save sections
-//! from GaItems through TutorialData, then adds the constant 29-byte gap.
-//! Works for all characters including brand-new ones with zero graces.
-//!
-//! Fallback: Content-based search — scans for grace flag patterns.
-//! Only used if structural computation fails (data corruption).
+//! 2026-07-05: Primary is the gaEnd-windowed grace-validation scan
+//! ([gaEnd+30k, gaEnd+45k]); the former "structural computation" was
+//! disproven (~146k overshoot onto a lookalike region) and is no longer used
+//! for detection. Fallback: legacy full-range content search. See
+//! crates/wasm-event-flags/tests/anchor_conformance.rs for the fixtures that
+//! define the convention, and note the per-family float caveat there.
 
 // Re-export constants from the shared crate
 pub use wasm_event_flags::{
@@ -150,6 +150,6 @@ mod tests {
     fn test_constants_match_shared() {
         use crate::db::pickup_flags::EVENT_FLAGS_SIZE;
         assert_eq!(EVENT_FLAGS_SIZE, 0x1bf99f);
-        assert_eq!(SEARCH_START, 0x30000);
+        assert_eq!(SEARCH_START, 0x12000);
     }
 }

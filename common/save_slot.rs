@@ -1713,11 +1713,14 @@ impl Read for SaveSlot {
             ._tutorial_data
             .copy_from_slice(br.read_bytes(0x408)?);
 
-        // EventFlags offset is DYNAMIC - varies per character save
-        // We use validation-based detection to find the correct offset
-        // Search range: 0x30000+ (real EF is at ~222K, inventory data at ~76K causes false positives)
-        const SEARCH_START: usize = 0x30000;
-        const FALLBACK_OFFSET: usize = 0x36500;  // ~222K range based on empirical testing
+        // EventFlags offset is DYNAMIC - varies per character save.
+        // CORRECTED 2026-07-05: the previous comment here ("real EF is at
+        // ~222K, inventory data at ~76K causes false positives") had it
+        // backwards - the b24/b25 kill-transition pair proves the flags live
+        // in the ~76-82k region, and the ~222K position is a lookalike.
+        // Detection is the shared gaEnd-windowed scan in wasm-event-flags
+        // (see crates/wasm-event-flags tests/anchor_conformance.rs).
+        const SEARCH_START: usize = wasm_event_flags::SEARCH_START;
 
         let slot_start = end - 0x280000;
 
@@ -1726,11 +1729,17 @@ impl Read for SaveSlot {
         br.pos = slot_start;
         let slot_data = br.read_bytes(0x280000)?;
 
-        // Detect event flags offset using validation flags
+        // Detect event flags offset using validation flags. Fallback for
+        // anchor-less slots (brand-new characters): gaEnd + median observed
+        // grace-family delta, NOT an absolute constant.
+        let fallback_offset = match wasm_event_flags::parse_ga_items_end(&slot_data) {
+            ga_end if ga_end >= 0 => ga_end as usize + 35_300,
+            _ => SEARCH_START,
+        };
         let detection = super::event_flags_detection::detect_event_flags_offset_with_fallback(
             &slot_data,
             SEARCH_START,
-            FALLBACK_OFFSET,
+            fallback_offset,
         );
 
         let ef_abs_pos = slot_start + detection.offset;
