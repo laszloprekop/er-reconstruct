@@ -11,19 +11,12 @@
 //! crates/wasm-event-flags/tests/anchor_conformance.rs for the fixtures that
 //! define the convention, and note the per-family float caveat there.
 
-// Re-export constants from the shared crate
-pub use wasm_event_flags::{
-    POSITIVE_VALIDATION_FLAGS,
-    SEARCH_START,
-};
-
-/// Legacy constant name for backward compatibility
-pub const VALIDATION_FLAGS: &[(u32, u32, u8, &str)] = &[
-    (71800, 2725, 7, "Cave of Knowledge"),
-    (71801, 2725, 6, "Stranded Graveyard"),
-    (76100, 3262, 3, "The First Step"),
-    (76101, 3262, 2, "Church of Elleh"),
-];
+// Re-export from the shared crate. `POSITIVE_VALIDATION_FLAGS` was re-exported
+// here only for `verify_event_flags_offset`, deleted 2026-07-22: it scored a
+// detected offset by testing tutorial graces at hardcoded byte positions, and
+// those graces are clear on minimal characters, so a correct offset could score
+// zero. Read the flags from the crate directly if you need them.
+pub use wasm_event_flags::SEARCH_START;
 
 /// Result of EventFlags offset detection
 #[derive(Debug, Clone)]
@@ -34,7 +27,12 @@ pub struct EventFlagsDetectionResult {
     pub validation_score: usize,
     /// Whether detection is confident (all validation flags matched)
     pub confident: bool,
-    /// Size of the gap before EventFlags (from expected position)
+    /// Size of the gap before EventFlags (from expected position).
+    ///
+    /// Unread: a diagnostic recorded alongside the detection, not an input to
+    /// it. Kept because it is the only record of how far a detection landed
+    /// from expectation, which is what distinguishes a clean hit from a lucky one.
+    #[allow(dead_code)]
     pub gap_size: usize,
 }
 
@@ -96,60 +94,17 @@ pub fn detect_event_flags_offset_with_fallback(
     }
 }
 
-/// Verify that EventFlags at a given offset contain expected patterns.
-///
-/// This can be used to validate an offset after reading.
-pub fn verify_event_flags_offset(slot_data: &[u8], offset: usize) -> (usize, Vec<&'static str>) {
-    let mut score = 0;
-    let mut matched_graces = Vec::new();
-
-    for &(_flag_id, byte_offset, bit_pos, name, _tier) in POSITIVE_VALIDATION_FLAGS {
-        let abs_pos = offset + byte_offset as usize;
-
-        if abs_pos < slot_data.len() {
-            let byte = slot_data[abs_pos];
-            if (byte & (1 << bit_pos)) != 0 {
-                score += 1;
-                matched_graces.push(name);
-            }
-        }
-    }
-
-    (score, matched_graces)
-}
-
-/// Calculate the bit position within a byte for a given flag ID.
-pub fn flag_id_to_bit_position(flag_id: u32) -> u8 {
-    7 - ((flag_id % 8) as u8)
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
 
-    #[test]
-    fn test_bit_position_calculation() {
-        // Flag 76100: bit position should be 3
-        // 76100 % 8 = 4, 7 - 4 = 3
-        assert_eq!(flag_id_to_bit_position(76100), 3);
-
-        // Flag 76101: bit position should be 2
-        // 76101 % 8 = 5, 7 - 5 = 2
-        assert_eq!(flag_id_to_bit_position(76101), 2);
-
-        // Flag 71800: bit position should be 7
-        // 71800 % 8 = 0, 7 - 0 = 7
-        assert_eq!(flag_id_to_bit_position(71800), 7);
-
-        // Flag 71801: bit position should be 6
-        // 71801 % 8 = 1, 7 - 1 = 6
-        assert_eq!(flag_id_to_bit_position(71801), 6);
-    }
-
+    /// The constants this module re-exports must stay identical to the shared
+    /// crate's. Restored 2026-07-22: it was removed as collateral when the
+    /// tutorial-grace validator went, but it guards a different thing — drift
+    /// between this module's view of the format and `wasm-event-flags`'.
     #[test]
     fn test_constants_match_shared() {
-        use crate::db::pickup_flags::EVENT_FLAGS_SIZE;
-        assert_eq!(EVENT_FLAGS_SIZE, 0x1bf99f);
+        assert_eq!(wasm_event_flags::EVENT_FLAGS_SIZE, 0x1bf99f);
         assert_eq!(SEARCH_START, 0x12000);
     }
 }

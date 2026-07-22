@@ -757,6 +757,7 @@ impl EquipInventoryData {
     }
 
     #[cfg(feature = "save-writeback")]
+    #[allow(dead_code)] // dormant write path (ADR-0009)
     fn write(&self, length1: usize, length2: usize) -> Result<Vec<u8>, io::Error> {
         let mut bytes: Vec<u8> = Vec::new();
 
