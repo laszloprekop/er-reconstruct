@@ -1,7 +1,9 @@
 // Common user_data_10 chunks that is in both PC and Playstation save 
 use std::io;
 use binary_reader::BinaryReader;
-use crate::{read::read::Read, write::write::Write};
+use crate::read::read::Read;
+#[cfg(feature = "save-writeback")]
+use crate::write::write::Write;
 
 pub struct CSMenuSystemSaveLoad {
     unk: u32,
@@ -25,6 +27,7 @@ impl Read for CSMenuSystemSaveLoad {
     }
 }
 
+#[cfg(feature = "save-writeback")]
 impl Write for CSMenuSystemSaveLoad {
     fn write(&self) -> Result<Vec<u8>, io::Error> {
         let mut bytes: Vec<u8> = Vec::new();
@@ -93,6 +96,7 @@ impl Read for ProfileSummaryEquipmentGaitem {
         Ok(equipment)
     }
 }
+#[cfg(feature = "save-writeback")]
 impl Write for ProfileSummaryEquipmentGaitem {
     fn write(&self) -> Result<Vec<u8>, io::Error> {
         let mut bytes: Vec<u8> = Vec::new();
@@ -173,6 +177,7 @@ impl Read for ProfileSummaryEquipmentItem {
         Ok(equipment)
     }
 }
+#[cfg(feature = "save-writeback")]
 impl Write for ProfileSummaryEquipmentItem {
     fn write(&self) -> Result<Vec<u8>, io::Error> {
         let mut bytes: Vec<u8> = Vec::new();
@@ -269,6 +274,7 @@ impl Read for ProfileSummary {
     }
 }
 
+#[cfg(feature = "save-writeback")]
 impl Write for ProfileSummary{
     fn write(&self) -> Result<Vec<u8>, io::Error> {
         let mut bytes: Vec<u8> = Vec::new();
@@ -316,6 +322,7 @@ impl Read for CSKeyConfigSaveLoad {
     }
 }
 
+#[cfg(feature = "save-writeback")]
 impl Write for CSKeyConfigSaveLoad {
     fn write(&self) -> Result<Vec<u8>, io::Error> {
         let mut bytes: Vec<u8> = Vec::new();

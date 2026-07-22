@@ -1,4 +1,6 @@
-use crate::{read::read::Read, save::common::save_slot::SaveSlot, write::write::Write};
+use crate::{read::read::Read, save::common::save_slot::SaveSlot};
+#[cfg(feature = "save-writeback")]
+use crate::write::write::Write;
 
 #[derive(Clone)]
 pub struct PCSaveSlot {
@@ -29,6 +31,7 @@ impl Read for PCSaveSlot {
     }
 }
 
+#[cfg(feature = "save-writeback")]
 impl Write for PCSaveSlot {
     fn write(&self) -> Result<Vec<u8>, std::io::Error> {
         let mut bytes: Vec<u8> = Vec::new();

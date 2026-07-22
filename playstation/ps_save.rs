@@ -1,6 +1,8 @@
 use std::io;
 use binary_reader::BinaryReader;
-use crate::{read::read::Read, save::common::{save_slot::SaveSlot, user_data_11::UserData11}, write::write::Write};
+use crate::{read::read::Read, save::common::{save_slot::SaveSlot, user_data_11::UserData11}};
+#[cfg(feature = "save-writeback")]
+use crate::write::write::Write;
 use super::{save_header::SaveHeader, user_data_10::UserData10};
 
 
@@ -36,6 +38,7 @@ impl Read for PSSave {
         Ok(save)
     }
 }
+#[cfg(feature = "save-writeback")]
 impl Write for PSSave {
     fn write(&self) -> Result<Vec<u8>, io::Error> {
         let mut bytes: Vec<u8> = Vec::new();

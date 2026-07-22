@@ -1,7 +1,9 @@
 use std::io;
 use binary_reader::BinaryReader;
 
-use crate::{read::read::Read, save::common::user_data_10::{CSKeyConfigSaveLoad, CSMenuSystemSaveLoad, ProfileSummary}, write::write::Write};
+use crate::{read::read::Read, save::common::user_data_10::{CSKeyConfigSaveLoad, CSMenuSystemSaveLoad, ProfileSummary}};
+#[cfg(feature = "save-writeback")]
+use crate::write::write::Write;
 
 
 #[derive(Copy, Clone)]
@@ -33,6 +35,7 @@ impl Read for PCOptionData {
     }
 }
 
+#[cfg(feature = "save-writeback")]
 impl Write for PCOptionData {
     fn write(&self) -> Result<Vec<u8>, io::Error> {
         let mut bytes: Vec<u8> = Vec::new();
@@ -121,6 +124,7 @@ impl UserData10 {
     }
 }
 
+#[cfg(feature = "save-writeback")]
 impl Write for UserData10 {
     fn write(&self) -> Result<Vec<u8>, io::Error> {
         let mut bytes: Vec<u8> = Vec::new();

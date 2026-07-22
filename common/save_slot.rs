@@ -1,4 +1,6 @@
-use crate::{read::read::Read, write::write::Write};
+use crate::read::read::Read;
+#[cfg(feature = "save-writeback")]
+use crate::write::write::Write;
 use binary_reader::BinaryReader;
 use std::io;
 
@@ -31,6 +33,7 @@ impl Read for WorldAreaTime {
     }
 }
 
+#[cfg(feature = "save-writeback")]
 impl Write for WorldAreaTime {
     fn write(&self) -> Result<Vec<u8>, io::Error> {
         let mut bytes: Vec<u8> = Vec::new();
@@ -68,6 +71,7 @@ impl Read for WorldAreaWeather {
     }
 }
 
+#[cfg(feature = "save-writeback")]
 impl Write for WorldAreaWeather {
     fn write(&self) -> Result<Vec<u8>, io::Error> {
         let mut bytes: Vec<u8> = Vec::new();
@@ -111,6 +115,7 @@ impl Read for PlayerCoords {
     }
 }
 
+#[cfg(feature = "save-writeback")]
 impl Write for PlayerCoords {
     fn write(&self) -> Result<Vec<u8>, io::Error> {
         let mut bytes: Vec<u8> = Vec::new();
@@ -153,6 +158,7 @@ impl Read for UknownList {
     }
 }
 
+#[cfg(feature = "save-writeback")]
 impl Write for UknownList {
     fn write(&self) -> Result<Vec<u8>, io::Error> {
         let mut bytes: Vec<u8> = Vec::new();
@@ -192,6 +198,7 @@ impl Read for GaItem2 {
     }
 }
 
+#[cfg(feature = "save-writeback")]
 impl Write for GaItem2 {
     fn write(&self) -> Result<Vec<u8>, io::Error> {
         let mut bytes: Vec<u8> = Vec::new();
@@ -224,6 +231,7 @@ impl Read for EventFlags {
     }
 }
 
+#[cfg(feature = "save-writeback")]
 impl Write for EventFlags {
     fn write(&self) -> Result<Vec<u8>, io::Error> {
         let mut bytes: Vec<u8> = Vec::new();
@@ -261,6 +269,7 @@ impl Read for GaItemData {
     }
 }
 
+#[cfg(feature = "save-writeback")]
 impl Write for GaItemData {
     fn write(&self) -> Result<Vec<u8>, io::Error> {
         let mut bytes: Vec<u8> = Vec::new();
@@ -312,6 +321,7 @@ impl Read for RideGameData {
     }
 }
 
+#[cfg(feature = "save-writeback")]
 impl Write for RideGameData {
     fn write(&self) -> Result<Vec<u8>, io::Error> {
         let mut bytes: Vec<u8> = Vec::new();
@@ -355,6 +365,7 @@ impl Read for Regions {
     }
 }
 
+#[cfg(feature = "save-writeback")]
 impl Write for Regions {
     fn write(&self) -> Result<Vec<u8>, io::Error> {
         let mut bytes: Vec<u8> = Vec::new();
@@ -398,6 +409,7 @@ impl Read for EquipPhysicsData {
     }
 }
 
+#[cfg(feature = "save-writeback")]
 impl Write for EquipPhysicsData {
     fn write(&self) -> Result<Vec<u8>, io::Error> {
         let mut bytes: Vec<u8> = Vec::new();
@@ -431,6 +443,7 @@ impl Read for EquipProjectile {
     }
 }
 
+#[cfg(feature = "save-writeback")]
 impl Write for EquipProjectile {
     fn write(&self) -> Result<Vec<u8>, io::Error> {
         let mut bytes: Vec<u8> = Vec::new();
@@ -471,6 +484,7 @@ impl Read for EquipProjectileData {
         Ok(equip_projectile_data)
     }
 }
+#[cfg(feature = "save-writeback")]
 impl Write for EquipProjectileData {
     fn write(&self) -> Result<Vec<u8>, io::Error> {
         let mut bytes: Vec<u8> = Vec::new();
@@ -540,6 +554,7 @@ impl Read for EquippedItems {
         Ok(equipped_items)
     }
 }
+#[cfg(feature = "save-writeback")]
 impl Write for EquippedItems {
     fn write(&self) -> Result<Vec<u8>, io::Error> {
         let mut bytes: Vec<u8> = Vec::new();
@@ -599,6 +614,7 @@ impl Read for EquipItem {
     }
 }
 
+#[cfg(feature = "save-writeback")]
 impl Write for EquipItem {
     fn write(&self) -> Result<Vec<u8>, io::Error> {
         let mut bytes: Vec<u8> = Vec::new();
@@ -650,6 +666,7 @@ impl Read for EquipItemData {
     }
 }
 
+#[cfg(feature = "save-writeback")]
 impl Write for EquipItemData {
     fn write(&self) -> Result<Vec<u8>, io::Error> {
         let mut bytes: Vec<u8> = Vec::new();
@@ -696,6 +713,7 @@ impl Read for EquipMagicSpell {
     }
 }
 
+#[cfg(feature = "save-writeback")]
 impl Write for EquipMagicSpell {
     fn write(&self) -> Result<Vec<u8>, io::Error> {
         let mut bytes: Vec<u8> = Vec::new();
@@ -738,6 +756,7 @@ impl Read for EquipMagicData {
     }
 }
 
+#[cfg(feature = "save-writeback")]
 impl Write for EquipMagicData {
     fn write(&self) -> Result<Vec<u8>, io::Error> {
         let mut bytes: Vec<u8> = Vec::new();
@@ -779,6 +798,7 @@ impl Read for EquipInventoryItem {
     }
 }
 
+#[cfg(feature = "save-writeback")]
 impl Write for EquipInventoryItem {
     fn write(&self) -> Result<Vec<u8>, io::Error> {
         let mut bytes: Vec<u8> = Vec::new();
@@ -844,6 +864,7 @@ impl EquipInventoryData {
         Ok(equip_inventory_data)
     }
 
+    #[cfg(feature = "save-writeback")]
     fn write(&self, length1: usize, length2: usize) -> Result<Vec<u8>, io::Error> {
         let mut bytes: Vec<u8> = Vec::new();
 
@@ -927,6 +948,7 @@ impl Read for ChrAsm {
     }
 }
 
+#[cfg(feature = "save-writeback")]
 impl Write for ChrAsm {
     fn write(&self) -> Result<Vec<u8>, io::Error> {
         let mut bytes: Vec<u8> = Vec::new();
@@ -1007,6 +1029,7 @@ impl Read for ChrAsm2 {
     }
 }
 
+#[cfg(feature = "save-writeback")]
 impl Write for ChrAsm2 {
     fn write(&self) -> Result<Vec<u8>, io::Error> {
         let mut bytes: Vec<u8> = Vec::new();
@@ -1085,6 +1108,7 @@ impl Read for EquipData {
     }
 }
 
+#[cfg(feature = "save-writeback")]
 impl Write for EquipData {
     fn write(&self) -> Result<Vec<u8>, io::Error> {
         let mut bytes: Vec<u8> = Vec::new();
@@ -1340,6 +1364,7 @@ impl Read for PlayerGameData {
     }
 }
 
+#[cfg(feature = "save-writeback")]
 impl Write for PlayerGameData {
     fn write(&self) -> Result<Vec<u8>, io::Error> {
         let mut bytes: Vec<u8> = Vec::new();
@@ -1482,6 +1507,7 @@ impl Read for GaItem {
     }
 }
 
+#[cfg(feature = "save-writeback")]
 impl Write for GaItem {
     fn write(&self) -> Result<Vec<u8>, io::Error> {
         let mut bytes: Vec<u8> = Vec::new();
@@ -1798,6 +1824,7 @@ impl Read for SaveSlot {
     }
 }
 
+#[cfg(feature = "save-writeback")]
 impl Write for SaveSlot {
     fn write(&self) -> Result<Vec<u8>, io::Error> {
         let mut bytes: Vec<u8> = Vec::new();

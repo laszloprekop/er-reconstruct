@@ -1,7 +1,9 @@
 use std::io;
 use binary_reader::BinaryReader;
 
-use crate::{read::read::Read, write::write::Write};
+use crate::read::read::Read;
+#[cfg(feature = "save-writeback")]
+use crate::write::write::Write;
 
 pub struct SaveHeader {
     pub data: Vec<u8>,
@@ -22,6 +24,7 @@ impl Read for SaveHeader {
     }
 }
 
+#[cfg(feature = "save-writeback")]
 impl Write for SaveHeader {
     fn write(&self) -> Result<Vec<u8>, io::Error> {
         Ok(self.data.clone())

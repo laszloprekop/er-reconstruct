@@ -1,7 +1,7 @@
 //! Dynamic EventFlags offset detection
 //!
 //! SINGLE SOURCE OF TRUTH: This module delegates to wasm-event-flags crate.
-//! The same detection algorithm is used by both ER-save-Editor (native) and
+//! The same detection algorithm is used by both ER-save-Reader (native) and
 //! elden-map (via WASM).
 //!
 //! 2026-07-05: Primary is the gaEnd-windowed grace-validation scan

@@ -1,5 +1,6 @@
 use std::io::Error;
 use binary_reader::BinaryReader;
+#[cfg(feature = "save-writeback")]
 use crate::write::write::Write;
 use crate::read::read::Read;
 
@@ -30,6 +31,7 @@ impl Read for UserData11 {
     }
 }
 
+#[cfg(feature = "save-writeback")]
 impl Write for UserData11 {
     fn write(&self) -> Result<Vec<u8>, Error> {
         let mut bytes: Vec<u8> = Vec::new();

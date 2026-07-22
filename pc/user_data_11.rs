@@ -1,4 +1,6 @@
-use crate::{read::read::Read, save::common::user_data_11::UserData11, write::write::Write};
+use crate::{read::read::Read, save::common::user_data_11::UserData11};
+#[cfg(feature = "save-writeback")]
+use crate::write::write::Write;
 
 pub struct PcUserData11 {
     pub checksum: [u8; 0x10],
@@ -28,6 +30,7 @@ impl Read for PcUserData11 {
     }
 }
 
+#[cfg(feature = "save-writeback")]
 impl Write for PcUserData11 {
     fn write(&self) -> Result<Vec<u8>, std::io::Error> {
         let mut bytes: Vec<u8> = Vec::new();

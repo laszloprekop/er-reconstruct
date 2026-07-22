@@ -3,10 +3,16 @@ pub mod save {
     use binary_reader::BinaryReader;
     use crate::{
         read::read::Read, save::{
-            common::{ save_slot::{EquipInventoryData, EquipProjectileData, GaItem, GaItemData, SaveSlot}, user_data_10::ProfileSummary, user_data_11::UserData11 },
+            common::{ save_slot::{EquipInventoryData, SaveSlot}, user_data_10::ProfileSummary, user_data_11::UserData11 },
             pc::pc_save::PCSave, 
             playstation::ps_save::PSSave, 
-        }, util::{bit::bit::set_bit, regulation::Regulation}, write::write::Write
+        }, util::regulation::Regulation
+    };
+    #[cfg(feature = "save-writeback")]
+    use crate::{
+        save::common::save_slot::{EquipProjectileData, GaItem, GaItemData},
+        util::bit::bit::set_bit,
+        write::write::Write,
     };
 
     // Using a checksum of the regulation bin file to check for Save Wizard .txt save file
@@ -30,6 +36,7 @@ pub mod save {
             }
         }
 
+        #[cfg(feature = "save-writeback")]
         pub fn set_global_steam_id(&mut self, steam_id: u64) {
             match self {
                 SaveType::Unknown => panic!("Why are we here?"),
@@ -87,6 +94,7 @@ pub mod save {
             }
         }
 
+        #[cfg(feature = "save-writeback")]
         pub fn set_character_steam_id(&mut self, index: usize, steam_id: u64) {
             match self {
                 SaveType::Unknown => panic!("Why are we here?"),
@@ -99,6 +107,7 @@ pub mod save {
             }
         }
 
+        #[cfg(feature = "save-writeback")]
         pub fn set_character_name(&mut self, index: usize, character_name_str: String) {
             let mut character_name: [u16; 0x10] = [0; 0x10];
             let mut character_name2: [u16; 0x11] = [0; 0x11];
@@ -119,6 +128,7 @@ pub mod save {
             }
         }
 
+        #[cfg(feature = "save-writeback")]
         pub fn set_character_gender(&mut self, index: usize, gender: u8) {
             match self {
                 SaveType::Unknown => panic!("Why are we here?"),
@@ -131,6 +141,7 @@ pub mod save {
             }
         }
 
+        #[cfg(feature = "save-writeback")]
         pub fn set_character_health(&mut self, index: usize, health: u32) {
             match self {
                 SaveType::Unknown => panic!("Why are we here?"),
@@ -143,6 +154,7 @@ pub mod save {
             }
         }
 
+        #[cfg(feature = "save-writeback")]
         pub fn set_character_base_max_health(&mut self, index: usize, base_max_health: u32) {
             match self {
                 SaveType::Unknown => panic!("Why are we here?"),
@@ -155,6 +167,7 @@ pub mod save {
             }
         }
 
+        #[cfg(feature = "save-writeback")]
         pub fn set_character_fp(&mut self, index: usize, fp: u32) {
             match self {
                 SaveType::Unknown => panic!("Why are we here?"),
@@ -167,6 +180,7 @@ pub mod save {
             }
         }
 
+        #[cfg(feature = "save-writeback")]
         pub fn set_character_base_max_fp(&mut self, index: usize, base_max_fp: u32) {
             match self {
                 SaveType::Unknown => panic!("Why are we here?"),
@@ -179,6 +193,7 @@ pub mod save {
             }
         }
 
+        #[cfg(feature = "save-writeback")]
         pub fn set_character_sp(&mut self, index: usize, sp: u32) {
             match self {
                 SaveType::Unknown => panic!("Why are we here?"),
@@ -191,6 +206,7 @@ pub mod save {
             }
         }
 
+        #[cfg(feature = "save-writeback")]
         pub fn set_character_base_max_sp(&mut self, index: usize, base_max_sp: u32) {
             match self {
                 SaveType::Unknown => panic!("Why are we here?"),
@@ -203,6 +219,7 @@ pub mod save {
             }
         }
         
+        #[cfg(feature = "save-writeback")]
         pub fn set_character_level(&mut self, index: usize, level: u32) {
             match self {
                 SaveType::Unknown => panic!("Why are we here?"),
@@ -216,6 +233,7 @@ pub mod save {
             }
         }
 
+        #[cfg(feature = "save-writeback")]
         pub fn set_character_vigor(&mut self, index: usize, vigor: u32) {
             match self {
                 SaveType::Unknown => panic!("Why are we here?"),
@@ -228,6 +246,7 @@ pub mod save {
             }
         }
 
+        #[cfg(feature = "save-writeback")]
         pub fn set_character_mind(&mut self, index: usize, mind: u32) {
             match self {
                 SaveType::Unknown => panic!("Why are we here?"),
@@ -240,6 +259,7 @@ pub mod save {
             }
         }
 
+        #[cfg(feature = "save-writeback")]
         pub fn set_character_endurance(&mut self, index: usize, endurance: u32) {
             match self {
                 SaveType::Unknown => panic!("Why are we here?"),
@@ -252,6 +272,7 @@ pub mod save {
             }
         }
 
+        #[cfg(feature = "save-writeback")]
         pub fn set_character_strength(&mut self, index: usize, strength: u32) {
             match self {
                 SaveType::Unknown => panic!("Why are we here?"),
@@ -264,6 +285,7 @@ pub mod save {
             }
         }
 
+        #[cfg(feature = "save-writeback")]
         pub fn set_character_dexterity(&mut self, index: usize, dexterity: u32) {
             match self {
                 SaveType::Unknown => panic!("Why are we here?"),
@@ -276,6 +298,7 @@ pub mod save {
             }
         }
 
+        #[cfg(feature = "save-writeback")]
         pub fn set_character_intelligence(&mut self, index: usize, intelligence: u32) {
             match self {
                 SaveType::Unknown => panic!("Why are we here?"),
@@ -288,6 +311,7 @@ pub mod save {
             }
         }
 
+        #[cfg(feature = "save-writeback")]
         pub fn set_character_faith(&mut self, index: usize, faith: u32) {
             match self {
                 SaveType::Unknown => panic!("Why are we here?"),
@@ -300,6 +324,7 @@ pub mod save {
             }
         }
 
+        #[cfg(feature = "save-writeback")]
         pub fn set_character_arcane(&mut self, index: usize, arcane: u32) {
             match self {
                 SaveType::Unknown => panic!("Why are we here?"),
@@ -312,6 +337,7 @@ pub mod save {
             }
         }
 
+        #[cfg(feature = "save-writeback")]
         pub fn set_character_souls(&mut self, index: usize, souls: u32) {
             match self {
                 SaveType::Unknown => panic!("Why are we here?"),
@@ -334,6 +360,7 @@ pub mod save {
             }
         }
 
+        #[cfg(feature = "save-writeback")]
         pub fn set_character_event_flag(&mut self, index: usize, offset: usize, bit_pos: u8, state: bool) {
             match self {
                 SaveType::Unknown => panic!("Why are we here?"),
@@ -348,6 +375,7 @@ pub mod save {
             }
         }
 
+        #[cfg(feature = "save-writeback")]
         pub fn add_region(&mut self, index: usize, region_id: u32) {
             match self {
                 SaveType::Unknown => panic!("Why are we here?"),
@@ -374,6 +402,7 @@ pub mod save {
             }
         }
 
+        #[cfg(feature = "save-writeback")]
         pub fn remove_region(&mut self, index: usize, region_id: u32) {
             match self {
                 SaveType::Unknown => panic!("Why are we here?"),
@@ -408,6 +437,7 @@ pub mod save {
             }
         }
 
+        #[cfg(feature = "save-writeback")]
         pub fn set_profile_summary(&mut self, index:usize, profile_summary: ProfileSummary) {
             match self {
                 SaveType::Unknown => panic!("Why are we here?"),
@@ -424,6 +454,7 @@ pub mod save {
             }
         }
 
+        #[cfg(feature = "save-writeback")]
         pub fn set_slot(&mut self, index:usize, save_slot: &SaveSlot) {
             match self {
                 SaveType::Unknown => panic!("Why are we here?"),
@@ -448,6 +479,7 @@ pub mod save {
             }
         }
 
+        #[cfg(feature = "save-writeback")]
         pub fn set_gaitem_map(&mut self, index: usize, ga_items: Vec<GaItem>) {
             match self {
                 SaveType::Unknown => panic!("Why are we here?"),
@@ -456,6 +488,7 @@ pub mod save {
             }
         }
 
+        #[cfg(feature = "save-writeback")]
         pub fn set_held_inventory(&mut self, index: usize, held_inventory: EquipInventoryData) {
             match self {
                 SaveType::Unknown => panic!("Why are we here?"),
@@ -468,6 +501,7 @@ pub mod save {
             }
         }
 
+        #[cfg(feature = "save-writeback")]
         pub fn set_storage_box_inventory(&mut self, index: usize, storage_box_inventory: EquipInventoryData) {
             match self {
                 SaveType::Unknown => panic!("Why are we here?"),
@@ -480,6 +514,7 @@ pub mod save {
             }
         }
 
+        #[cfg(feature = "save-writeback")]
         pub fn set_gaitem_item_data(&mut self, index: usize, gaitem_data: GaItemData) {
             match self {
                 SaveType::Unknown => panic!("Why are we here?"),
@@ -492,6 +527,7 @@ pub mod save {
             }
         }
 
+        #[cfg(feature = "save-writeback")]
         pub fn set_quickslot_item(&mut self, slot_index: usize, quickslot_index: usize,  gaitem_handle: u32, item_id: u32, equip_index: u32) {
             match self {
                 SaveType::Unknown => panic!("Why are we here?"),
@@ -508,6 +544,7 @@ pub mod save {
             }
         }
 
+        #[cfg(feature = "save-writeback")]
         pub fn set_pouch_item(&mut self, slot_index: usize, pouch_index: usize,  gaitem_handle: u32, item_id: u32, equip_index: u32) {
             match self {
                 SaveType::Unknown => panic!("Why are we here?"),
@@ -524,6 +561,7 @@ pub mod save {
             }
         }
 
+        #[cfg(feature = "save-writeback")]
         pub fn set_left_weapon_slot(&mut self, slot_index: usize, weapon_slot_index: usize,  gaitem_handle: u32, item_id: u32, equip_index: u32) {
             match self {
                 SaveType::Unknown => panic!("Why are we here?"),
@@ -550,6 +588,7 @@ pub mod save {
             }
         }
         
+        #[cfg(feature = "save-writeback")]
         pub fn set_right_weapon_slot(&mut self, slot_index: usize, weapon_slot_index: usize,  gaitem_handle: u32, item_id: u32, equip_index: u32) {
             match self {
                 SaveType::Unknown => panic!("Why are we here?"),
@@ -576,6 +615,7 @@ pub mod save {
             }
         }
         
+        #[cfg(feature = "save-writeback")]
         pub fn set_arrow_slot(&mut self, slot_index: usize, weapon_slot_index: usize,  gaitem_handle: u32, item_id: u32, equip_index: u32) {
             match self {
                 SaveType::Unknown => panic!("Why are we here?"),
@@ -602,6 +642,7 @@ pub mod save {
             }
         }
         
+        #[cfg(feature = "save-writeback")]
         pub fn set_bolt_slot(&mut self, slot_index: usize, weapon_slot_index: usize,  gaitem_handle: u32, item_id: u32, equip_index: u32) {
             match self {
                 SaveType::Unknown => panic!("Why are we here?"),
@@ -628,6 +669,7 @@ pub mod save {
             }
         }
         
+        #[cfg(feature = "save-writeback")]
         pub fn set_talisman_slot(&mut self, slot_index: usize, weapon_slot_index: usize,  gaitem_handle: u32, item_id: u32, equip_index: u32) {
             match self {
                 SaveType::Unknown => panic!("Why are we here?"),
@@ -654,6 +696,7 @@ pub mod save {
             }
         }
         
+        #[cfg(feature = "save-writeback")]
         pub fn set_head_gear(&mut self, slot_index: usize, gaitem_handle: u32, item_id: u32, equip_index: u32) {
             match self {
                 SaveType::Unknown => panic!("Why are we here?"),
@@ -680,6 +723,7 @@ pub mod save {
             }
         }
         
+        #[cfg(feature = "save-writeback")]
         pub fn set_chest_piece(&mut self, slot_index: usize, gaitem_handle: u32, item_id: u32, equip_index: u32) {
             match self {
                 SaveType::Unknown => panic!("Why are we here?"),
@@ -706,6 +750,7 @@ pub mod save {
             }
         }
         
+        #[cfg(feature = "save-writeback")]
         pub fn set_gauntlets(&mut self, slot_index: usize, gaitem_handle: u32, item_id: u32, equip_index: u32) {
             match self {
                 SaveType::Unknown => panic!("Why are we here?"),
@@ -732,6 +777,7 @@ pub mod save {
             }
         }
         
+        #[cfg(feature = "save-writeback")]
         pub fn set_leggings(&mut self, slot_index: usize, gaitem_handle: u32, item_id: u32, equip_index: u32) {
             match self {
                 SaveType::Unknown => panic!("Why are we here?"),
@@ -758,6 +804,7 @@ pub mod save {
             }
         }
 
+        #[cfg(feature = "save-writeback")]
         pub fn set_equip_projectile_data(&mut self, index: usize, projectile_list: EquipProjectileData) {
             match self {
                 SaveType::Unknown => panic!("Why are we here?"),
@@ -770,6 +817,7 @@ pub mod save {
             }
         }
 
+        #[cfg(feature = "save-writeback")]
         pub fn set_match_making_wpn_lvl(&mut self, index: usize, weapon_level: u8) {
             match self {
                 SaveType::Unknown => panic!("Why are we here?"),
@@ -783,6 +831,7 @@ pub mod save {
         }
 
         // DLC
+        #[cfg(feature = "save-writeback")]
         pub fn set_character_scadutree_lvl(&mut self, index: usize, scadutree_lvl: u32) {
             match self {
                 SaveType::Unknown => panic!("Why are we here?"),
@@ -798,6 +847,7 @@ pub mod save {
             }
         }
 
+        #[cfg(feature = "save-writeback")]
         pub fn set_character_spirit_ash_lvl(&mut self, index: usize, spirit_ash_lvl: u32) {
             match self {
                 SaveType::Unknown => panic!("Why are we here?"),
@@ -845,6 +895,7 @@ pub mod save {
         }
     }
 
+    #[cfg(feature = "save-writeback")]
     impl Write for Save {
         fn write(&self) -> Result<Vec<u8>, io::Error> {
             let save_bytes: Vec<u8> =  match &self.save_type {
