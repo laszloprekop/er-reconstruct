@@ -1,3 +1,8 @@
+// `Read` impls default the struct then assign field-by-field in the order the
+// bytes appear on disk. The sequence *is* the file layout; folding it into a
+// struct literal would decouple the two.
+#![allow(clippy::field_reassign_with_default)]
+
 // Common user_data_10 chunks that is in both PC and Playstation save 
 use std::io;
 use binary_reader::BinaryReader;
@@ -5,17 +10,13 @@ use crate::read::read::Read;
 #[cfg(feature = "save-writeback")]
 use crate::write::write::Write;
 
+#[derive(Default)]
 pub struct CSMenuSystemSaveLoad {
     unk: u32,
     length: u32,
     data: Vec<u8>
 }
 
-impl Default for CSMenuSystemSaveLoad {
-    fn default() -> Self {
-        Self { unk: Default::default(), length: Default::default(), data: Default::default() }
-    }
-}
 
 impl Read for CSMenuSystemSaveLoad {
     fn read(br: &mut BinaryReader) -> Result<Self, io::Error> {
@@ -302,16 +303,12 @@ impl Write for ProfileSummary{
 
 #[derive(Clone)]
 
+#[derive(Default)]
 pub struct CSKeyConfigSaveLoad {
     length: i32,
     elements: Vec<u8>
 }
 
-impl Default for CSKeyConfigSaveLoad {
-    fn default() -> Self {
-        Self { length: Default::default(), elements: Default::default() }
-    }
-}
 
 impl Read for CSKeyConfigSaveLoad {
     fn read(br: &mut BinaryReader) -> Result<Self, io::Error> {

@@ -18,6 +18,9 @@ pub mod save {
     // Using a checksum of the regulation bin file to check for Save Wizard .txt save file
     // const REGULATION_MD5_CHECKSUM: [u8; 0x10] =[0x2E, 0x88, 0x1A, 0x15, 0xAC, 0x05, 0x88, 0x8D, 0xF2, 0xC2, 0x6A, 0xEC, 0xC2, 0x90, 0x89, 0x23];
 
+    // One `SaveType` exists per loaded save, so the variant size delta is not worth
+    // boxing (and boxing would push an indirection through every accessor below).
+    #[allow(clippy::large_enum_variant)]
     pub enum SaveType {
         Unknown,
         PC(PCSave),
@@ -921,8 +924,8 @@ pub mod save {
 
         // Check if it's a save file
         pub fn is(br: &mut BinaryReader) -> bool {
-            let is = Self::is_pc(br) || Self::is_ps_save_wizard(br);
-            is
+            
+            Self::is_pc(br) || Self::is_ps_save_wizard(br)
         }
 
         // Check if it's a PC save file
@@ -940,8 +943,8 @@ pub mod save {
                 Ok(bytes) => bytes,
                 Err(_) => return false,
             };
-            let is_ps_save_wizard = Regulation::check_save_compression(&regulation)
-                .unwrap_or_else(|_| false);
+            let is_ps_save_wizard = Regulation::check_save_compression(regulation)
+                .unwrap_or(false);
             br.jmp(0);
             is_ps_save_wizard
         }

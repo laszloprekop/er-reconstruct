@@ -1,3 +1,8 @@
+// `Read` impls default the struct then assign field-by-field in the order the
+// bytes appear on disk. The sequence *is* the file layout; folding it into a
+// struct literal would decouple the two.
+#![allow(clippy::field_reassign_with_default)]
+
 use crate::read::read::Read;
 #[cfg(feature = "save-writeback")]
 use crate::write::write::Write;
@@ -7,21 +12,13 @@ use std::io;
 use super::event_flags_detection::EventFlagsDetectionResult;
 
 #[derive(Clone)]
+#[derive(Default)]
 pub struct WorldAreaTime {
     unk0: i32,
     unk1: i32,
     unk2: i32,
 }
 
-impl Default for WorldAreaTime {
-    fn default() -> Self {
-        Self {
-            unk0: Default::default(),
-            unk1: Default::default(),
-            unk2: Default::default(),
-        }
-    }
-}
 
 impl Read for WorldAreaTime {
     fn read(br: &mut BinaryReader) -> Result<Self, io::Error> {
@@ -45,21 +42,13 @@ impl Write for WorldAreaTime {
 }
 
 #[derive(Clone)]
+#[derive(Default)]
 pub struct WorldAreaWeather {
     unk0: i32,
     unk1: i32,
     unk2: i32,
 }
 
-impl Default for WorldAreaWeather {
-    fn default() -> Self {
-        Self {
-            unk0: Default::default(),
-            unk1: Default::default(),
-            unk2: Default::default(),
-        }
-    }
-}
 
 impl Read for WorldAreaWeather {
     fn read(br: &mut BinaryReader) -> Result<Self, io::Error> {
@@ -83,6 +72,7 @@ impl Write for WorldAreaWeather {
 }
 
 #[derive(Clone)]
+#[derive(Default)]
 pub struct PlayerCoords {
     pub player_coords: (f32, f32, f32),
     pub map_id: [u8; 4],
@@ -91,17 +81,6 @@ pub struct PlayerCoords {
     _0x10: [u8; 0x10],
 }
 
-impl Default for PlayerCoords {
-    fn default() -> Self {
-        Self {
-            player_coords: Default::default(),
-            map_id: Default::default(),
-            _0x11: Default::default(),
-            player_coords2: Default::default(),
-            _0x10: Default::default(),
-        }
-    }
-}
 
 impl Read for PlayerCoords {
     fn read(br: &mut BinaryReader) -> Result<Self, io::Error> {
@@ -133,19 +112,12 @@ impl Write for PlayerCoords {
 }
 
 #[derive(Clone)]
+#[derive(Default)]
 struct UknownList {
     length: i32,
     elements: Vec<u8>,
 }
 
-impl Default for UknownList {
-    fn default() -> Self {
-        Self {
-            length: Default::default(),
-            elements: Default::default(),
-        }
-    }
-}
 
 impl Read for UknownList {
     fn read(br: &mut BinaryReader) -> Result<Self, io::Error> {
@@ -169,6 +141,7 @@ impl Write for UknownList {
 }
 
 #[derive(Clone)]
+#[derive(Default)]
 pub struct GaItem2 {
     pub id: u32,
     pub unk: u32,
@@ -176,16 +149,6 @@ pub struct GaItem2 {
     pub unk1: u32,
 }
 
-impl Default for GaItem2 {
-    fn default() -> Self {
-        Self {
-            id: Default::default(),
-            unk: Default::default(),
-            reinforce_type: Default::default(),
-            unk1: Default::default(),
-        }
-    }
-}
 
 impl Read for GaItem2 {
     fn read(br: &mut BinaryReader) -> Result<Self, io::Error> {
@@ -284,6 +247,7 @@ impl Write for GaItemData {
 }
 
 #[derive(Clone)]
+#[derive(Default)]
 pub struct RideGameData {
     horse_coords: (f32, f32, f32),
     _0x4: i32,
@@ -292,17 +256,6 @@ pub struct RideGameData {
     _0x4_1: u32,
 }
 
-impl Default for RideGameData {
-    fn default() -> Self {
-        Self {
-            horse_coords: Default::default(),
-            _0x4: Default::default(),
-            _0x10: Default::default(),
-            horse_hp: Default::default(),
-            _0x4_1: Default::default(),
-        }
-    }
-}
 
 impl Read for RideGameData {
     fn read(br: &mut BinaryReader) -> Result<Self, io::Error> {
@@ -337,19 +290,12 @@ impl Write for RideGameData {
 }
 
 #[derive(Clone)]
+#[derive(Default)]
 pub struct Regions {
     pub unlocked_regions_count: u32,
     pub unlocked_regions: Vec<u32>,
 }
 
-impl Default for Regions {
-    fn default() -> Self {
-        Self {
-            unlocked_regions_count: Default::default(),
-            unlocked_regions: Default::default(),
-        }
-    }
-}
 
 impl Read for Regions {
     fn read(br: &mut BinaryReader) -> Result<Self, io::Error> {
@@ -381,19 +327,12 @@ impl Write for Regions {
 }
 
 #[derive(Clone)]
+#[derive(Default)]
 pub struct EquipPhysicsData {
     pub slot1: u32,
     pub slot2: u32,
 }
 
-impl Default for EquipPhysicsData {
-    fn default() -> Self {
-        Self {
-            slot1: Default::default(),
-            slot2: Default::default(),
-        }
-    }
-}
 
 impl Read for EquipPhysicsData {
     fn read(br: &mut BinaryReader) -> Result<Self, io::Error> {
@@ -420,19 +359,12 @@ impl Write for EquipPhysicsData {
 }
 
 #[derive(Clone)]
+#[derive(Default)]
 pub struct EquipProjectile {
     pub projectile_id: u32,
     pub unk: i32,
 }
 
-impl Default for EquipProjectile {
-    fn default() -> Self {
-        Self {
-            projectile_id: Default::default(),
-            unk: Default::default(),
-        }
-    }
-}
 
 impl Read for EquipProjectile {
     fn read(br: &mut BinaryReader) -> Result<Self, io::Error> {
@@ -454,19 +386,12 @@ impl Write for EquipProjectile {
 }
 
 #[derive(Clone)]
+#[derive(Default)]
 pub struct EquipProjectileData {
     pub projectile_count: i32,
     pub projectiles: Vec<EquipProjectile>,
 }
 
-impl Default for EquipProjectileData {
-    fn default() -> Self {
-        Self {
-            projectile_count: Default::default(),
-            projectiles: vec![],
-        }
-    }
-}
 impl Read for EquipProjectileData {
     fn read(br: &mut BinaryReader) -> Result<Self, io::Error> {
         let mut equip_projectile_data = EquipProjectileData::default();
@@ -591,19 +516,12 @@ impl Write for EquippedItems {
 }
 
 #[derive(Copy, Clone)]
+#[derive(Default)]
 pub struct EquipItem {
     pub item_id: u32,
     pub equipment_index: u32,
 }
 
-impl Default for EquipItem {
-    fn default() -> Self {
-        Self {
-            item_id: Default::default(),
-            equipment_index: Default::default(),
-        }
-    }
-}
 
 impl Read for EquipItem {
     fn read(br: &mut BinaryReader) -> Result<Self, io::Error> {
@@ -690,19 +608,12 @@ impl Write for EquipItemData {
 }
 
 #[derive(Clone)]
+#[derive(Default)]
 pub struct EquipMagicSpell {
     spell_id: i32,
     unk: i32,
 }
 
-impl Default for EquipMagicSpell {
-    fn default() -> Self {
-        Self {
-            spell_id: Default::default(),
-            unk: Default::default(),
-        }
-    }
-}
 
 impl Read for EquipMagicSpell {
     fn read(br: &mut BinaryReader) -> Result<Self, io::Error> {
@@ -770,21 +681,13 @@ impl Write for EquipMagicData {
 }
 
 #[derive(Copy, Clone)]
+#[derive(Default)]
 pub struct EquipInventoryItem {
     pub ga_item_handle: u32,
     pub quantity: u32,
     pub inventory_index: u32,
 }
 
-impl Default for EquipInventoryItem {
-    fn default() -> Self {
-        Self {
-            ga_item_handle: Default::default(),
-            quantity: Default::default(),
-            inventory_index: Default::default(),
-        }
-    }
-}
 
 impl Read for EquipInventoryItem {
     fn read(br: &mut BinaryReader) -> Result<EquipInventoryItem, io::Error> {
@@ -812,6 +715,7 @@ impl Write for EquipInventoryItem {
 }
 
 #[derive(Clone)]
+#[derive(Default)]
 pub struct EquipInventoryData {
     pub common_inventory_items_distinct_count: u32,
     pub common_items: Vec<EquipInventoryItem>,
@@ -821,18 +725,6 @@ pub struct EquipInventoryData {
     pub next_acquisition_sort_id: u32,
 }
 
-impl Default for EquipInventoryData {
-    fn default() -> Self {
-        Self {
-            common_inventory_items_distinct_count: Default::default(),
-            common_items: vec![],
-            key_inventory_items_distinct_count: Default::default(),
-            key_items: vec![],
-            next_equip_index: 0,
-            next_acquisition_sort_id: 0,
-        }
-    }
-}
 
 impl EquipInventoryData {
     fn read(
@@ -1758,12 +1650,12 @@ impl Read for SaveSlot {
         // Detect event flags offset using validation flags. Fallback for
         // anchor-less slots (brand-new characters): gaEnd + median observed
         // grace-family delta, NOT an absolute constant.
-        let fallback_offset = match wasm_event_flags::parse_ga_items_end(&slot_data) {
+        let fallback_offset = match wasm_event_flags::parse_ga_items_end(slot_data) {
             ga_end if ga_end >= 0 => ga_end as usize + 35_300,
             _ => SEARCH_START,
         };
         let detection = super::event_flags_detection::detect_event_flags_offset_with_fallback(
-            &slot_data,
+            slot_data,
             SEARCH_START,
             fallback_offset,
         );

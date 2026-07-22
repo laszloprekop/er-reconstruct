@@ -2,19 +2,12 @@ use crate::{read::read::Read, save::common::user_data_11::UserData11};
 #[cfg(feature = "save-writeback")]
 use crate::write::write::Write;
 
+#[derive(Default)]
 pub struct PcUserData11 {
     pub checksum: [u8; 0x10],
     pub user_data_11: UserData11,
 }
 
-impl Default for PcUserData11{
-    fn default() -> Self {
-        Self { 
-            checksum: [0x0; 0x10],
-            user_data_11: UserData11::default() 
-        }
-    }
-}
 
 impl Read for PcUserData11 {
     fn read(br: &mut binary_reader::BinaryReader) -> Result<Self, std::io::Error> {

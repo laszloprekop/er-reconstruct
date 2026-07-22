@@ -1,3 +1,8 @@
+// `Read` impls default the struct then assign field-by-field in the order the
+// bytes appear on disk. The sequence *is* the file layout; folding it into a
+// struct literal would decouple the two.
+#![allow(clippy::field_reassign_with_default)]
+
 use std::io;
 use binary_reader::BinaryReader;
 use crate::{read::read::Read, save::common::{save_slot::SaveSlot, user_data_11::UserData11}};

@@ -3,19 +3,12 @@ use crate::{read::read::Read, save::common::save_slot::SaveSlot};
 use crate::write::write::Write;
 
 #[derive(Clone)]
+#[derive(Default)]
 pub struct PCSaveSlot {
     pub checksum: [u8; 0x10],
     pub save_slot: SaveSlot,
 }
 
-impl Default for PCSaveSlot{
-    fn default() -> Self {
-        Self { 
-            checksum: [0x0; 0x10],
-            save_slot: SaveSlot::default() 
-        }
-    }
-}
 
 impl Read for PCSaveSlot {
     fn read(br: &mut binary_reader::BinaryReader) -> Result<Self, std::io::Error> {
