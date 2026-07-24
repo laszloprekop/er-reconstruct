@@ -924,7 +924,15 @@ pub mod save {
     impl Save {
         pub fn from_path(path: &PathBuf) -> Result<Save, io::Error> {
             let contents = fs::read(path).expect("Should have been able to read the file");
-            let mut br = BinaryReader::from_u8(&contents);
+            Self::from_bytes(&contents)
+        }
+
+        /// Parse a save from bytes already in memory. The pure counterpart to
+        /// `from_path`: the reconstruction core and any caller that retains the
+        /// save bytes (to also call `reconstruct`) parse through this, avoiding a
+        /// second file read.
+        pub fn from_bytes(contents: &[u8]) -> Result<Save, io::Error> {
+            let mut br = BinaryReader::from_u8(contents);
             br.set_endian(binary_reader::Endian::Little);
 
             // Check if it's an actual save file
