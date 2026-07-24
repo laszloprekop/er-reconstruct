@@ -7,9 +7,10 @@ license = "MIT OR Apache-2.0"
 
 [lib]
 name = "er_reconstruct"
-# rlib for the native reader; cdylib is added when the WASM entry point lands in
-# a later slice. The seed links native only.
-crate-type = ["rlib"]
+# rlib for the native reader (linked in-process); cdylib for the wasm-pack build
+# elden-map consumes. The wasm-bindgen entry point is gated to wasm32, so native
+# builds carry no wasm machinery.
+crate-type = ["cdylib", "rlib"]
 
 [features]
 default = []
@@ -41,15 +42,14 @@ binary-reader = "0.4.5"
 # reader.
 aes = "0.8.4"
 cbc = "0.1.2"
+# Facts are Serialize so the WASM boundary (and later consumers) can emit them as
+# JSON; serde_json renders the string the wasm entry point returns.
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
 # Write-back only (feature-gated): MD5 checksums recomputed when serialising.
 md5 = { version = "0.7.0", optional = true }
 
-[dev-dependencies]
-# Only the conformance harness needs JSON, to read its expected-facts manifest.
-serde_json = "1.0"
-
-# Standalone-dev convenience: when `er-reconstruct` is the build root, resolve
-# wasm-event-flags from the local checkout instead of fetching ER-save-Reader.git.
-# Ignored when `er-reconstruct` is a dependency — the consumer's patch applies.
-[patch."https://github.com/laszloprekop/ER-save-Reader.git"]
-wasm-event-flags = { path = "../Elden Ring stuff/ER-save-Reader/crates/wasm-event-flags" }
+# wasm-pack build only: the JS boundary. Gated to wasm32 so the native reader
+# never compiles wasm-bindgen.
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+wasm-bindgen = "0.2"

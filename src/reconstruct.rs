@@ -32,7 +32,7 @@ const SLOT_COUNT: usize = 10;
 /// reconstructed value, not a game display label); `level` is the character
 /// level; `class_id` is the raw archetype id (0 = Vagabond … 9 = Wretch). No
 /// names, no coordinates. Later slices append fields; they never change these.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
 pub struct ReconstructedCharacter {
     pub name: String,
     pub level: u32,

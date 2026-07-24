@@ -28,4 +28,8 @@ pub mod write;
 
 mod reconstruct;
 
+// The JS boundary for elden-map's wasm-pack build; wasm32 only (see `wasm.rs`).
+#[cfg(target_arch = "wasm32")]
+mod wasm;
+
 pub use reconstruct::{reconstruct, ReconstructError, ReconstructedCharacter};
