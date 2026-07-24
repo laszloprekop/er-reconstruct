@@ -27,10 +27,14 @@ save-writeback = ["dep:md5"]
 module_inception = "allow"
 
 [dependencies]
-# wasm-event-flags stays the canonical home in ER-save-Reader; consumed here by a
-# local path for development. The published crate pins it via git so a WASM build
-# and the reader resolve the same source (ADR-0010, Drift-proof).
-wasm-event-flags = { path = "../Elden Ring stuff/ER-save-Reader/crates/wasm-event-flags" }
+# wasm-event-flags stays the canonical home in ER-save-Reader. The published crate
+# references it by git so `er-reconstruct` resolves standalone; a consumer (this
+# reader, elden-map) unifies it to its own copy with a `[patch]` on the same URL,
+# so there is never a second wasm-event-flags in the graph (ADR-0010, Drift-proof).
+# The `[patch]` at the bottom of this file applies only when `er-reconstruct` is
+# the build root — i.e. standalone dev and tests here — and is ignored when it is a
+# dependency, where the consumer's patch wins.
+wasm-event-flags = { git = "https://github.com/laszloprekop/ER-save-Reader.git", branch = "master" }
 binary-reader = "0.4.5"
 # Minimal regulation slice: AES-CBC decrypt of the regulation blob, used only to
 # recognise a PS Save Wizard save. The heavy param/BND4 machinery stays in the
@@ -43,3 +47,9 @@ md5 = { version = "0.7.0", optional = true }
 [dev-dependencies]
 # Only the conformance harness needs JSON, to read its expected-facts manifest.
 serde_json = "1.0"
+
+# Standalone-dev convenience: when `er-reconstruct` is the build root, resolve
+# wasm-event-flags from the local checkout instead of fetching ER-save-Reader.git.
+# Ignored when `er-reconstruct` is a dependency — the consumer's patch applies.
+[patch."https://github.com/laszloprekop/ER-save-Reader.git"]
+wasm-event-flags = { path = "../Elden Ring stuff/ER-save-Reader/crates/wasm-event-flags" }
