@@ -3,7 +3,7 @@ name = "er-reconstruct"
 version = "0.1.0"
 edition = "2021"
 description = "Character Reconstructor — the shared reconstruction core (ADR-0010). Turns one slot of an Elden Ring save into facts, compiled native and WASM."
-license = "MIT"
+license = "MIT OR Apache-2.0"
 
 [lib]
 name = "er_reconstruct"
