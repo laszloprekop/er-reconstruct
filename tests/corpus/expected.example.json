@@ -4,8 +4,20 @@
     {
       "save": "YourSave.sl2",
       "slot": 0,
-      "expected": { "name": "<character name>", "level": 0, "class_id": 0 },
-      "oracle": "<how this expected fact was independently verified>"
+      "expected": {
+        "name": "<character name>",
+        "level": 0,
+        "class_id": 0,
+        "graces_set": 0,
+        "bosses_set": 0,
+        "flags": [{ "id": 10000800, "state": "Set" }]
+      },
+      "oracle": "<how each expected fact was independently verified>"
     }
-  ]
+  ],
+  "_field_notes": {
+    "graces_set": "OPTIONAL. Expected count of Set (discovered) graces. Cross-check against the reader export's events.graces discovered tally. Omit if you have no independent grace oracle for the slot.",
+    "bosses_set": "OPTIONAL. Expected count of Set (defeated) bosses. Cross-check against the reader export's events.bosses discovered tally, or known progression.",
+    "flags": "OPTIONAL. Targeted per-id known-truth. `state` is \"Set\", \"Clear\", or \"Unknown\". Ids may be grace or boss flag ids. Unknown means position unresolvable (e.g. an uncalibrated DLC tile) — distinct from Clear."
+  }
 }

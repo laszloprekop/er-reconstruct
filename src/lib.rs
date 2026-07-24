@@ -17,6 +17,7 @@
 //! layers on top of rather than absorbing. The seed reconstructs identity only and
 //! reads no flags yet; later slices resolve them through that crate.
 
+pub mod facts;
 pub mod read;
 pub mod save;
 pub mod util;
@@ -32,4 +33,5 @@ mod reconstruct;
 #[cfg(target_arch = "wasm32")]
 mod wasm;
 
+pub use facts::{FlagFact, FlagStatus};
 pub use reconstruct::{reconstruct, ReconstructError, ReconstructedCharacter};

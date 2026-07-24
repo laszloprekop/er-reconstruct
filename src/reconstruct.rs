@@ -19,24 +19,35 @@
 use std::io;
 
 use binary_reader::BinaryReader;
+use wasm_event_flags::ResolvedFlags;
 
+use crate::facts::{resolve_bosses, resolve_graces, FlagFact};
 use crate::read::read::Read;
 use crate::save::save::save::Save;
 
 /// The number of character slots a save carries.
 const SLOT_COUNT: usize = 10;
 
-/// One slot's reconstructed identity — the seed of the fact set (ADR-0010).
+/// One slot's reconstructed facts (ADR-0010). Append-only across slices.
 ///
 /// Facts only. `name` is the player's own name decoded from the slot (a
 /// reconstructed value, not a game display label); `level` is the character
-/// level; `class_id` is the raw archetype id (0 = Vagabond … 9 = Wretch). No
-/// names, no coordinates. Later slices append fields; they never change these.
+/// level; `class_id` is the raw archetype id (0 = Vagabond … 9 = Wretch).
+///
+/// `graces` and `bosses` (slice #4) are the first flag-derived facts: each is
+/// every known grace / boss-defeat flag id paired with its tri-state for this
+/// save, ascending by id, resolved per save through `wasm-event-flags` — no
+/// hardcoded flag positions (ADR-0008). Their `Unknown` state means "position
+/// unresolvable", not "clear". No display names, no coordinates: id → name is a
+/// Canonical Name lookup in each app's Enrichment stage. Later slices append
+/// fields; they never change the ones here.
 #[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
 pub struct ReconstructedCharacter {
     pub name: String,
     pub level: u32,
     pub class_id: u8,
+    pub graces: Vec<FlagFact>,
+    pub bosses: Vec<FlagFact>,
 }
 
 /// Why a reconstruction could not be produced. Distinct from a *fact* that a
@@ -98,10 +109,19 @@ pub fn reconstruct(bytes: &[u8], slot: usize) -> Result<ReconstructedCharacter, 
         .get_player_game_data(slot)
         .ok_or(ReconstructError::UnrecognizedSave)?;
 
+    // Resolve the flag region's Origin ONCE and share it across every flag fact:
+    // pinning it is a ~13,400-byte scan, and graces + bosses read from the same
+    // region. `None` (unresolvable origin, or no flag bytes for this slot) makes
+    // every flag read Unknown rather than a guessed Clear (ADR-0008).
+    let event_flags = save.save_type.get_event_flags(slot);
+    let resolved = event_flags.and_then(ResolvedFlags::from_event_flags);
+
     Ok(ReconstructedCharacter {
         name: decode_name(&pgd.character_name),
         level: pgd.level,
         class_id: pgd.arche_type,
+        graces: resolve_graces(resolved.as_ref()),
+        bosses: resolve_bosses(resolved.as_ref()),
     })
 }
 

@@ -15,7 +15,26 @@
 use std::fs;
 use std::path::PathBuf;
 
+use er_reconstruct::{FlagFact, FlagStatus};
 use serde_json::Value;
+
+/// Count facts in the `Set` state — the reader's "discovered" tally. `Clear` and
+/// `Unknown` are both not-discovered; keeping `Unknown` out of the count is the
+/// whole point of the tri-state (a `Set` count that swallowed `Unknown` would be
+/// the 0/110 bug in reverse).
+fn count_set(facts: &[FlagFact]) -> u64 {
+    facts.iter().filter(|f| f.state == FlagStatus::Set).count() as u64
+}
+
+/// The manifest spells expected flag states as `"Set"`/`"Clear"`/`"Unknown"` —
+/// the same tokens `FlagStatus` serializes to.
+fn status_name(s: FlagStatus) -> &'static str {
+    match s {
+        FlagStatus::Set => "Set",
+        FlagStatus::Clear => "Clear",
+        FlagStatus::Unknown => "Unknown",
+    }
+}
 
 /// Where the real saves live — from the environment only; nothing personal is
 /// baked in. `None` means the harness skips.
@@ -85,6 +104,45 @@ fn corpus_saves_reconstruct_to_known_truth() {
             expected["class_id"].as_u64().unwrap(),
             "class_id mismatch for {save_name}#{slot}"
         );
+
+        // Flag facts (slice #4), all OPTIONAL so identity-only cases still pass.
+        // Counts cross-check against the reader's independent "discovered" tally;
+        // targeted `flags` pin individual known-truth ids (e.g. the slot-0 gotcha:
+        // Godrick + Margit defeated). A count is the number of `Set` facts —
+        // `Unknown` and `Clear` are deliberately NOT counted as discovered.
+        if let Some(want) = expected["graces_set"].as_u64() {
+            let got_set = count_set(&got.graces);
+            assert_eq!(
+                got_set, want,
+                "graces_set mismatch for {save_name}#{slot} (reconstruct {got_set} vs oracle {want})"
+            );
+        }
+        if let Some(want) = expected["bosses_set"].as_u64() {
+            let got_set = count_set(&got.bosses);
+            assert_eq!(
+                got_set, want,
+                "bosses_set mismatch for {save_name}#{slot} (reconstruct {got_set} vs oracle {want})"
+            );
+        }
+        if let Some(flags) = expected["flags"].as_array() {
+            for want in flags {
+                let id = want["id"].as_u64().expect("flag id") as u32;
+                let want_state = want["state"].as_str().expect("flag state string");
+                let fact = got
+                    .graces
+                    .iter()
+                    .chain(got.bosses.iter())
+                    .find(|f| f.id == id)
+                    .unwrap_or_else(|| {
+                        panic!("flag id {id} is neither a grace nor a boss for {save_name}#{slot}")
+                    });
+                assert_eq!(
+                    status_name(fact.state),
+                    want_state,
+                    "flag {id} state mismatch for {save_name}#{slot}"
+                );
+            }
+        }
         checked += 1;
     }
 
