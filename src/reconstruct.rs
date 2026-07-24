@@ -21,7 +21,9 @@ use std::io;
 use binary_reader::BinaryReader;
 use wasm_event_flags::ResolvedFlags;
 
-use crate::facts::{resolve_bosses, resolve_graces, FlagFact};
+use crate::facts::{
+    resolve_bosses, resolve_dungeon_pickups, resolve_graces, resolve_world_pickups, FlagFact,
+};
 use crate::read::read::Read;
 use crate::save::save::save::Save;
 
@@ -38,7 +40,10 @@ const SLOT_COUNT: usize = 10;
 /// every known grace / boss-defeat flag id paired with its tri-state for this
 /// save, ascending by id, resolved per save through `wasm-event-flags` — no
 /// hardcoded flag positions (ADR-0008). Their `Unknown` state means "position
-/// unresolvable", not "clear". No display names, no coordinates: id → name is a
+/// unresolvable", not "clear". `world_pickups` and `dungeon_pickups` (slice #5)
+/// are the same shape keyed by `getItemFlagId`, routed to the pickup families;
+/// low/simple-flag world ids that belong to no pickup family read `Unknown`, as
+/// the reader shows them. No display names, no coordinates: id → item/name is a
 /// Canonical Name lookup in each app's Enrichment stage. Later slices append
 /// fields; they never change the ones here.
 #[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
@@ -48,6 +53,8 @@ pub struct ReconstructedCharacter {
     pub class_id: u8,
     pub graces: Vec<FlagFact>,
     pub bosses: Vec<FlagFact>,
+    pub world_pickups: Vec<FlagFact>,
+    pub dungeon_pickups: Vec<FlagFact>,
 }
 
 /// Why a reconstruction could not be produced. Distinct from a *fact* that a
@@ -122,6 +129,8 @@ pub fn reconstruct(bytes: &[u8], slot: usize) -> Result<ReconstructedCharacter, 
         class_id: pgd.arche_type,
         graces: resolve_graces(resolved.as_ref()),
         bosses: resolve_bosses(resolved.as_ref()),
+        world_pickups: resolve_world_pickups(resolved.as_ref()),
+        dungeon_pickups: resolve_dungeon_pickups(resolved.as_ref()),
     })
 }
 

@@ -10,6 +10,10 @@
         "class_id": 0,
         "graces_set": 0,
         "bosses_set": 0,
+        "world_pickups_total": 2438,
+        "dungeon_pickups_total": 1950,
+        "world_pickups_set_atleast": 0,
+        "dungeon_pickups_set_atmost": 2000,
         "flags": [{ "id": 10000800, "state": "Set" }]
       },
       "oracle": "<how each expected fact was independently verified>"
@@ -18,6 +22,8 @@
   "_field_notes": {
     "graces_set": "OPTIONAL. Expected count of Set (discovered) graces. Cross-check against the reader export's events.graces discovered tally. Omit if you have no independent grace oracle for the slot.",
     "bosses_set": "OPTIONAL. Expected count of Set (defeated) bosses. Cross-check against the reader export's events.bosses discovered tally, or known progression.",
-    "flags": "OPTIONAL. Targeted per-id known-truth. `state` is \"Set\", \"Clear\", or \"Unknown\". Ids may be grace or boss flag ids. Unknown means position unresolvable (e.g. an uncalibrated DLC tile) — distinct from Clear."
+    "world_pickups_total / dungeon_pickups_total": "OPTIONAL exact counts = the reader's machine-checked table sizes (unique getItemFlagIds). Verifies the core's tables loaded fully.",
+    "world_pickups_set_atleast / _atmost, dungeon_pickups_set_atleast / _atmost": "OPTIONAL known-truth BOUNDS on the collected count (not exact — pickups have no full-enumeration oracle). Encode the multi-slot differential: floors for a progressed slot, ceilings for an early one. Loose enough to be unarguable, tight enough to catch all-Unknown/all-Clear/all-Set/wrong-family regressions.",
+    "flags": "OPTIONAL. Targeted per-id known-truth across ALL fact families (grace, boss, world/dungeon pickup). `state` is \"Set\", \"Clear\", or \"Unknown\". Unknown means position unresolvable (e.g. an uncalibrated DLC tile) — distinct from Clear. Pickup anchors: collection is monotonic, so an id collected:true in any earlier export must still be Set."
   }
 }

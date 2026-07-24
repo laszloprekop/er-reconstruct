@@ -26,6 +26,26 @@ fn count_set(facts: &[FlagFact]) -> u64 {
     facts.iter().filter(|f| f.state == FlagStatus::Set).count() as u64
 }
 
+/// Assert the `Set` count of `facts` against optional `<key>_atleast` / `<key>_atmost`
+/// bounds in the manifest. Bounds (not an exact `==`) because pickups have no
+/// full-enumeration oracle — the numbers are known-truth inequalities, not
+/// reconstruct's own output blessed as truth.
+fn check_bound(facts: &[FlagFact], expected: &Value, key: &str, save: &str, slot: usize) {
+    let set = facts.iter().filter(|f| f.state == FlagStatus::Set).count() as u64;
+    if let Some(lo) = expected[format!("{key}_atleast")].as_u64() {
+        assert!(
+            set >= lo,
+            "{key} for {save}#{slot}: {set} Set is below known-truth floor {lo}"
+        );
+    }
+    if let Some(hi) = expected[format!("{key}_atmost")].as_u64() {
+        assert!(
+            set <= hi,
+            "{key} for {save}#{slot}: {set} Set is above known-truth ceiling {hi}"
+        );
+    }
+}
+
 /// The manifest spells expected flag states as `"Set"`/`"Clear"`/`"Unknown"` —
 /// the same tokens `FlagStatus` serializes to.
 fn status_name(s: FlagStatus) -> &'static str {
@@ -124,6 +144,33 @@ fn corpus_saves_reconstruct_to_known_truth() {
                 "bosses_set mismatch for {save_name}#{slot} (reconstruct {got_set} vs oracle {want})"
             );
         }
+
+        // Pickup facts (slice #5). No full-enumeration export exists to give an
+        // exact collected count, so the corpus guards them three independent ways:
+        //  - totals: the reader's MACHINE-CHECKED table sizes (loaded fully?);
+        //  - bounds: known-truth inequalities that encode the multi-slot
+        //    differential (a near-endgame slot collects many; a level-9 slot few) —
+        //    they catch the real regressions (all-Unknown, all-Clear, all-Set,
+        //    wrong family) without trusting reconstruct's exact number;
+        //  - targeted `flags`: specific ids known collected from an earlier export
+        //    (pickup collection is monotonic, so collected-then stays Set now).
+        if let Some(want) = expected["world_pickups_total"].as_u64() {
+            assert_eq!(
+                got.world_pickups.len() as u64, want,
+                "world_pickups_total mismatch for {save_name}#{slot}"
+            );
+        }
+        if let Some(want) = expected["dungeon_pickups_total"].as_u64() {
+            assert_eq!(
+                got.dungeon_pickups.len() as u64, want,
+                "dungeon_pickups_total mismatch for {save_name}#{slot}"
+            );
+        }
+        check_bound(&got.world_pickups, expected, "world_pickups_set", save_name, slot);
+        check_bound(&got.dungeon_pickups, expected, "dungeon_pickups_set", save_name, slot);
+
+        // `flags` pins per-id known-truth across ALL fact families (grace, boss,
+        // world/dungeon pickup) — the id identifies which.
         if let Some(flags) = expected["flags"].as_array() {
             for want in flags {
                 let id = want["id"].as_u64().expect("flag id") as u32;
@@ -132,9 +179,11 @@ fn corpus_saves_reconstruct_to_known_truth() {
                     .graces
                     .iter()
                     .chain(got.bosses.iter())
+                    .chain(got.world_pickups.iter())
+                    .chain(got.dungeon_pickups.iter())
                     .find(|f| f.id == id)
                     .unwrap_or_else(|| {
-                        panic!("flag id {id} is neither a grace nor a boss for {save_name}#{slot}")
+                        panic!("flag id {id} is in no fact family for {save_name}#{slot}")
                     });
                 assert_eq!(
                     status_name(fact.state),

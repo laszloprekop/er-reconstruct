@@ -14,10 +14,12 @@
 //! (`CONTEXT.md` → *Unknown*). Names for these ids stay in each app's Enrichment.
 
 pub mod flag_ids;
+pub mod pickup_ids;
 
 use wasm_event_flags::{FlagState, ResolvedFlags};
 
 pub use flag_ids::{BOSS_FLAG_IDS, GRACE_FLAG_IDS};
+pub use pickup_ids::{DUNGEON_PICKUP_FLAG_IDS, WORLD_PICKUP_FLAG_IDS};
 
 /// A flag's resolved tri-state, serialized by name (`"Set"`/`"Clear"`/
 /// `"Unknown"`). A local mirror of `wasm_event_flags::FlagState` so the fact set
@@ -91,16 +93,89 @@ pub fn resolve_bosses(resolved: Option<&ResolvedFlags>) -> Vec<FlagFact> {
         .collect()
 }
 
+/// Route a **pickup** `getItemFlagId` to its Flag Family and read it. Mirrors the
+/// reader's `pickup_state` — the `_pickup` siblings of `boss_family_state`, because
+/// these ids mean "item collected", never "boss defeated": a 10-digit tile id is
+/// `tile_pickup` (whose region sits 500 bytes from `tile_world`; the caller's
+/// semantics pick, never the value — CLAUDE.md), a legacy-map id is
+/// `dungeon_pickup`. Ids in neither family (low/simple/block flags a few world
+/// rows carry) read `Unknown`, exactly as the reader shows them. No base table
+/// here — it delegates to the per-save `ResolvedFlags`.
+fn pickup_family_state(resolved: &ResolvedFlags, id: u32) -> FlagStatus {
+    match id {
+        1_000_000_000..=1_999_999_999 => resolved.tile_pickup(id),
+        10_000_000..=999_999_999 => resolved.dungeon_pickup(id),
+        50_000..=79_999 => resolved.world_state(id),
+        _ => FlagState::Unknown,
+    }
+    .into()
+}
+
+/// World-pickup facts: every [`WORLD_PICKUP_FLAG_IDS`] id paired with its resolved
+/// state, ascending. Routes each id to its family; `None` origin yields all
+/// `Unknown`.
+pub fn resolve_world_pickups(resolved: Option<&ResolvedFlags>) -> Vec<FlagFact> {
+    WORLD_PICKUP_FLAG_IDS
+        .iter()
+        .map(|&id| FlagFact {
+            id,
+            state: resolved.map_or(FlagStatus::Unknown, |r| pickup_family_state(r, id)),
+        })
+        .collect()
+}
+
+/// Legacy-dungeon-pickup facts: every [`DUNGEON_PICKUP_FLAG_IDS`] id (localId >=
+/// 7000) paired with its resolved state, ascending. All resolve through the
+/// legacy-dungeon pickup family; `None` origin yields all `Unknown`.
+pub fn resolve_dungeon_pickups(resolved: Option<&ResolvedFlags>) -> Vec<FlagFact> {
+    DUNGEON_PICKUP_FLAG_IDS
+        .iter()
+        .map(|&id| FlagFact {
+            id,
+            state: resolved.map_or(FlagStatus::Unknown, |r| pickup_family_state(r, id)),
+        })
+        .collect()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
     fn tables_are_sorted_unique() {
-        for table in [GRACE_FLAG_IDS, BOSS_FLAG_IDS] {
+        for table in [
+            GRACE_FLAG_IDS,
+            BOSS_FLAG_IDS,
+            WORLD_PICKUP_FLAG_IDS,
+            DUNGEON_PICKUP_FLAG_IDS,
+        ] {
             assert!(
                 table.windows(2).all(|w| w[0] < w[1]),
                 "flag-id tables must be strictly ascending (sorted + deduped)"
+            );
+        }
+    }
+
+    #[test]
+    fn pickup_tables_do_not_overlap() {
+        // The reader's two tables partition the primary source exactly; a shared
+        // id would mean one pickup double-counted across the world/dungeon facts.
+        for &id in DUNGEON_PICKUP_FLAG_IDS {
+            assert!(
+                WORLD_PICKUP_FLAG_IDS.binary_search(&id).is_err(),
+                "id {id} appears in both pickup tables"
+            );
+        }
+    }
+
+    #[test]
+    fn every_dungeon_pickup_is_legacy_dungeon_family() {
+        // dungeon_pickup only answers the legacy-map range; an out-of-range id
+        // would read Unknown forever.
+        for &id in DUNGEON_PICKUP_FLAG_IDS {
+            assert!(
+                (10_000_000..1_000_000_000).contains(&id),
+                "dungeon pickup id {id} is not in the legacy-dungeon range"
             );
         }
     }
@@ -129,14 +204,17 @@ mod tests {
     fn no_flags_resolvable_means_all_unknown() {
         // A None region (unresolvable origin) must produce Unknown for every id,
         // never a defaulted Clear.
-        let graces = resolve_graces(None);
-        let bosses = resolve_bosses(None);
-        assert_eq!(graces.len(), GRACE_FLAG_IDS.len());
-        assert_eq!(bosses.len(), BOSS_FLAG_IDS.len());
-        assert!(graces.iter().all(|f| f.state == FlagStatus::Unknown));
-        assert!(bosses.iter().all(|f| f.state == FlagStatus::Unknown));
-        // Facts preserve the table's ascending id order.
-        assert!(graces.windows(2).all(|w| w[0].id < w[1].id));
-        assert!(bosses.windows(2).all(|w| w[0].id < w[1].id));
+        let facts = [
+            (resolve_graces(None), GRACE_FLAG_IDS.len()),
+            (resolve_bosses(None), BOSS_FLAG_IDS.len()),
+            (resolve_world_pickups(None), WORLD_PICKUP_FLAG_IDS.len()),
+            (resolve_dungeon_pickups(None), DUNGEON_PICKUP_FLAG_IDS.len()),
+        ];
+        for (produced, want_len) in facts {
+            assert_eq!(produced.len(), want_len);
+            assert!(produced.iter().all(|f| f.state == FlagStatus::Unknown));
+            // Facts preserve the table's ascending id order.
+            assert!(produced.windows(2).all(|w| w[0].id < w[1].id));
+        }
     }
 }
