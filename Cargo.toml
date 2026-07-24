@@ -1,0 +1,38 @@
+[package]
+name = "er-reconstruct"
+version = "0.1.0"
+edition = "2021"
+description = "Character Reconstructor — the shared reconstruction core (ADR-0010). Turns one slot of an Elden Ring save into facts, compiled native and WASM."
+license = "MIT"
+
+[lib]
+name = "er_reconstruct"
+# rlib for the native reader; cdylib is added when the WASM entry point lands in
+# a later slice. The seed links native only.
+crate-type = ["rlib"]
+
+[features]
+default = []
+# Dormant save write-back path, moved with the extracted `save/` code (ADR-0009).
+# The core is a reader: it reconstructs facts and never serialises state back to
+# bytes. The `Write` trait and its `impl`s live behind this flag so the extracted
+# code keeps compiling, resurrectable, but out of the default build.
+# Keep it compiling: `cargo check --features save-writeback`.
+save-writeback = []
+
+[lints.clippy]
+# Matches the source repo: `foo.rs` containing `pub mod foo { … }` is the layout
+# used throughout the extracted `save/` code.
+module_inception = "allow"
+
+[dependencies]
+# wasm-event-flags stays the canonical home in ER-save-Reader; consumed here by a
+# local path for development. The published crate pins it via git so a WASM build
+# and the reader resolve the same source (ADR-0010, Drift-proof).
+wasm-event-flags = { path = "../Elden Ring stuff/ER-save-Reader/crates/wasm-event-flags" }
+binary-reader = "0.4.5"
+# Minimal regulation slice: AES-CBC decrypt of the regulation blob, used only to
+# recognise a PS Save Wizard save. The heavy param/BND4 machinery stays in the
+# reader.
+aes = "0.8.4"
+cbc = "0.1.2"
