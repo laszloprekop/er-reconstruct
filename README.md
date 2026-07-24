@@ -47,9 +47,14 @@ with `ER_RECONSTRUCT_CORPUS_DIR`.
 `wasm-event-flags` lives in ER-save-Reader; this crate references it by git and a
 consumer unifies it with a `[patch]` on the same URL (see `Cargo.toml`).
 
-## License & origin
+## Maintainers & Attribution
+
+Maintained by **Laszlo Prekop**.
+
+The save-parsing code was extracted (with history) from
+[ER-Save-Editor](https://github.com/ClayAmore/ER-Save-Editor) by **ClayAmore**;
+further save-parsing contributions by **groobybugs**. Original authorship is
+preserved in the git history and the copyright notices.
 
 Dual-licensed under [MIT](LICENSE-MIT) or [Apache-2.0](LICENSE-APACHE), at your
-option. The save-parsing code was extracted (with history) from
-[ER-Save-Editor](https://github.com/ClayAmore/ER-Save-Editor) by ClayAmore;
-original authorship is preserved in the git history and the copyright notices.
+option.
