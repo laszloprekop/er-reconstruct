@@ -3,7 +3,7 @@ pub mod save {
     use binary_reader::BinaryReader;
     use crate::{
         read::read::Read, save::{
-            common::{ save_slot::{EquipInventoryData, SaveSlot}, user_data_10::ProfileSummary, user_data_11::UserData11 },
+            common::{ save_slot::{EquipInventoryData, PlayerGameData, SaveSlot}, user_data_10::ProfileSummary, user_data_11::UserData11 },
             pc::pc_save::PCSave, 
             playstation::ps_save::PSSave, 
         }, util::regulation::Regulation
@@ -66,6 +66,17 @@ pub mod save {
                 SaveType::Unknown => None,
                 SaveType::PC(pc_save) => Some(&pc_save.save_slots[index].save_slot.event_flags.flags),
                 SaveType::PlayStation(ps_save) => Some(&ps_save.save_slots[index].event_flags.flags),
+            }
+        }
+
+        /// Get a reference to the per-slot player game data (identity + stats),
+        /// or `None` for a save that did not parse. The two save layouts nest it
+        /// differently; this collapses that to one accessor for the reconstructor.
+        pub fn get_player_game_data(&self, index: usize) -> Option<&PlayerGameData> {
+            match self {
+                SaveType::Unknown => None,
+                SaveType::PC(pc_save) => Some(&pc_save.save_slots[index].save_slot.player_game_data),
+                SaveType::PlayStation(ps_save) => Some(&ps_save.save_slots[index].player_game_data),
             }
         }
 

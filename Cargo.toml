@@ -16,9 +16,10 @@ default = []
 # Dormant save write-back path, moved with the extracted `save/` code (ADR-0009).
 # The core is a reader: it reconstructs facts and never serialises state back to
 # bytes. The `Write` trait and its `impl`s live behind this flag so the extracted
-# code keeps compiling, resurrectable, but out of the default build.
-# Keep it compiling: `cargo check --features save-writeback`.
-save-writeback = []
+# code keeps compiling, resurrectable, but out of the default build. `md5` is only
+# reachable from that path (checksum recompute on write), so it is pulled in only
+# by the feature. Keep it compiling: `cargo check --features save-writeback`.
+save-writeback = ["dep:md5"]
 
 [lints.clippy]
 # Matches the source repo: `foo.rs` containing `pub mod foo { … }` is the layout
@@ -36,3 +37,9 @@ binary-reader = "0.4.5"
 # reader.
 aes = "0.8.4"
 cbc = "0.1.2"
+# Write-back only (feature-gated): MD5 checksums recomputed when serialising.
+md5 = { version = "0.7.0", optional = true }
+
+[dev-dependencies]
+# Only the conformance harness needs JSON, to read its expected-facts manifest.
+serde_json = "1.0"
