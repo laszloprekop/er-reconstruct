@@ -935,8 +935,15 @@ pub mod save {
             let mut br = BinaryReader::from_u8(contents);
             br.set_endian(binary_reader::Endian::Little);
 
-            // Check if it's an actual save file
-            assert!(Self::is(&mut br));
+            // Unrecognised bytes are an `Err`, not a panic: this returns `Result`,
+            // and callers (`pipeline.rs`) rely on `map_err` to surface a bad file
+            // rather than abort the process.
+            if !Self::is(&mut br) {
+                return Err(io::Error::new(
+                    io::ErrorKind::InvalidData,
+                    "not a recognised Elden Ring save",
+                ));
+            }
 
             Self::read(&mut br)
         }
