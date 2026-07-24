@@ -6,29 +6,35 @@
 //! the oracle during the strangler migration and the permanent regression guard;
 //! a later slice adds the `native == WASM` parity leg over the same corpus.
 //!
-//! Save bytes are out-of-repo evidence, so the harness resolves a corpus
-//! directory and, when it is absent, **skips with a notice** rather than failing —
-//! a fresh clone without the private saves still goes green. Point it at the saves
-//! with `ER_RECONSTRUCT_CORPUS_DIR`; the default matches this dev layout
-//! (`../Elden Ring stuff/Elden Ring save files` relative to the crate).
+//! Both the manifest (personal save data — character names/levels) and the save
+//! bytes are kept out of this public repo. The manifest `tests/corpus/expected.json`
+//! is gitignored (copy `expected.example.json` to create it); the saves are located
+//! via `ER_RECONSTRUCT_CORPUS_DIR`. When either is absent the harness **skips with a
+//! notice** rather than failing, so a fresh clone still goes green.
 
 use std::fs;
 use std::path::PathBuf;
 
 use serde_json::Value;
 
-/// Where the real saves live. Env override wins; the default is this dev layout.
-fn corpus_dir() -> PathBuf {
-    if let Ok(dir) = std::env::var("ER_RECONSTRUCT_CORPUS_DIR") {
-        return PathBuf::from(dir);
-    }
-    PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .join("../Elden Ring stuff/Elden Ring save files")
+/// Where the real saves live — from the environment only; nothing personal is
+/// baked in. `None` means the harness skips.
+fn corpus_dir() -> Option<PathBuf> {
+    std::env::var("ER_RECONSTRUCT_CORPUS_DIR")
+        .ok()
+        .map(PathBuf::from)
 }
 
 #[test]
 fn corpus_saves_reconstruct_to_known_truth() {
     let manifest_path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("tests/corpus/expected.json");
+    if !manifest_path.exists() {
+        eprintln!(
+            "SKIP corpus harness: no {manifest_path:?} (personal save data, gitignored). \
+             Copy tests/corpus/expected.example.json to create it."
+        );
+        return;
+    }
     let manifest: Value = serde_json::from_str(
         &fs::read_to_string(&manifest_path).expect("read corpus manifest"),
     )
@@ -37,14 +43,16 @@ fn corpus_saves_reconstruct_to_known_truth() {
     let cases = manifest["cases"].as_array().expect("cases array");
     assert!(!cases.is_empty(), "corpus must carry at least one case");
 
-    let dir = corpus_dir();
-    if !dir.is_dir() {
-        eprintln!(
-            "SKIP corpus harness: save directory {dir:?} not present. \
-             Set ER_RECONSTRUCT_CORPUS_DIR to run against the real saves."
-        );
-        return;
-    }
+    let dir = match corpus_dir() {
+        Some(dir) if dir.is_dir() => dir,
+        _ => {
+            eprintln!(
+                "SKIP corpus harness: set ER_RECONSTRUCT_CORPUS_DIR to the directory \
+                 holding the corpus saves to run against them."
+            );
+            return;
+        }
+    };
 
     let mut checked = 0usize;
     for case in cases {

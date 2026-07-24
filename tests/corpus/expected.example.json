@@ -1,0 +1,11 @@
+{
+  "description": "TEMPLATE for the conformance corpus (ADR-0010). Copy to `expected.json` (gitignored) and fill in with your own real saves. Each `expected` fact should be KNOWN TRUTH — cross-checked against an independent oracle (e.g. the reader's export), not against reconstruct's own output. Save bytes live out of repo; point the harness at them with ER_RECONSTRUCT_CORPUS_DIR. Character names/levels are personal save data, so the real manifest is not committed.",
+  "cases": [
+    {
+      "save": "YourSave.sl2",
+      "slot": 0,
+      "expected": { "name": "<character name>", "level": 0, "class_id": 0 },
+      "oracle": "<how this expected fact was independently verified>"
+    }
+  ]
+}
