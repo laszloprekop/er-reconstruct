@@ -221,6 +221,24 @@ fn corpus_saves_reconstruct_to_known_truth() {
                 "held_key_count mismatch for {save_name}#{slot}"
             );
         }
+        // Storage-box facts (slice #6 tail). No export lists the storage box's contents,
+        // so there is no per-item oracle — but the save records its own distinct-item
+        // counts (`storage_inventory_data.*_distinct_count`), a field independent of the
+        // GaItem decode under test. The manifest pins those header counts; a decode that
+        // dropped or invented a stored item moves the list length off the header.
+        if let Some(want) = expected["storage_common_count"].as_u64() {
+            assert_eq!(
+                got.storage_inventory.len() as u64, want,
+                "storage_common_count mismatch for {save_name}#{slot}"
+            );
+        }
+        if let Some(want) = expected["storage_key_count"].as_u64() {
+            assert_eq!(
+                got.storage_key_items.len() as u64, want,
+                "storage_key_count mismatch for {save_name}#{slot}"
+            );
+        }
+
         if let Some(items) = expected["items"].as_array() {
             for want in items {
                 let category = want["category"].as_str().expect("item category");

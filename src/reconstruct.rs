@@ -56,7 +56,9 @@ const SLOT_DATA_LEN: usize = 0x280000;
 /// gaitem map (`facts::inventory`). Each is `{ category, item_id, quantity }`, keyed
 /// by item identity — never the GaItem handle, which churns (`CONTEXT.md`). The two
 /// mirror the save's own split: `held_inventory` is the common list, `held_key_items`
-/// the key-item list.
+/// the key-item list. `storage_inventory` / `storage_key_items` (slice #6 tail) are the
+/// same two facts for the **storage box** — the second inventory list, decoded by the
+/// identical foundation (the reader decodes held and storage through one routine).
 ///
 /// `equipment` (slice #7) is what the character has *equipped* — the positional
 /// counterpart to held inventory, built on the same decode foundation. Each
@@ -85,6 +87,8 @@ pub struct ReconstructedCharacter {
     pub dungeon_pickups: Vec<FlagFact>,
     pub held_inventory: Vec<InventoryFact>,
     pub held_key_items: Vec<InventoryFact>,
+    pub storage_inventory: Vec<InventoryFact>,
+    pub storage_key_items: Vec<InventoryFact>,
     pub equipment: Vec<EquipmentFact>,
     pub stats: Stats,
     pub world_position: Option<WorldPosition>,
@@ -169,6 +173,22 @@ pub fn reconstruct(bytes: &[u8], slot: usize) -> Result<ReconstructedCharacter, 
         .map(resolve_held_key_items)
         .unwrap_or_default();
 
+    // The storage box (Roundtable chest) is a second inventory list with the SAME
+    // layout as the held one, so the very same decoders apply — the reader decodes both
+    // through one `fill_stroage_type`. Its common list needs the gaitem map too.
+    let storage_inventory = match (
+        save.save_type.get_storage_inventory(slot),
+        save.save_type.get_ga_items(slot),
+    ) {
+        (Some(inv), Some(ga_items)) => resolve_held_common(inv, ga_items),
+        _ => Vec::new(),
+    };
+    let storage_key_items = save
+        .save_type
+        .get_storage_inventory(slot)
+        .map(resolve_held_key_items)
+        .unwrap_or_default();
+
     // Equipment shares the held-inventory decode foundation: the loadout handles in
     // chr_asm2 indirect through the same gaitem map. Missing either layout yields an
     // empty loadout, never a guess.
@@ -197,6 +217,8 @@ pub fn reconstruct(bytes: &[u8], slot: usize) -> Result<ReconstructedCharacter, 
         dungeon_pickups: resolve_dungeon_pickups(resolved.as_ref()),
         held_inventory,
         held_key_items,
+        storage_inventory,
+        storage_key_items,
         equipment,
         stats: resolve_stats(pgd),
         world_position,
