@@ -23,8 +23,8 @@ use wasm_event_flags::ResolvedFlags;
 
 use crate::facts::{
     resolve_bosses, resolve_dungeon_pickups, resolve_equipment, resolve_graces,
-    resolve_held_common, resolve_held_key_items, resolve_world_pickups, EquipmentFact, FlagFact,
-    InventoryFact,
+    resolve_held_common, resolve_held_key_items, resolve_stats, resolve_world_pickups,
+    EquipmentFact, FlagFact, InventoryFact, Stats,
 };
 use crate::read::read::Read;
 use crate::save::save::save::Save;
@@ -59,6 +59,10 @@ const SLOT_COUNT: usize = 10;
 /// [`EquipmentFact`] names its slot (a hand, a projectile, an armor piece, a talisman)
 /// and carries item identity plus weapon upgrade; only occupied slots appear.
 ///
+/// `stats` (slice §04) is the scalar character sheet — the eight attributes, the two
+/// rune totals, the hp/fp/stamina triples, and the DLC blessing levels — read straight
+/// off the save. `level`/`class_id` stay in identity above, not duplicated here.
+///
 /// No display names, no coordinates: id → item/name is a Canonical Name lookup in
 /// each app's Enrichment stage. Later slices append fields; they never change the
 /// ones here.
@@ -74,6 +78,7 @@ pub struct ReconstructedCharacter {
     pub held_inventory: Vec<InventoryFact>,
     pub held_key_items: Vec<InventoryFact>,
     pub equipment: Vec<EquipmentFact>,
+    pub stats: Stats,
 }
 
 /// Why a reconstruction could not be produced. Distinct from a *fact* that a
@@ -174,6 +179,7 @@ pub fn reconstruct(bytes: &[u8], slot: usize) -> Result<ReconstructedCharacter, 
         held_inventory,
         held_key_items,
         equipment,
+        stats: resolve_stats(pgd),
     })
 }
 

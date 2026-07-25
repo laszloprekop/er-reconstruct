@@ -19,7 +19,13 @@
         "held_key_count": 0,
         "items": [{ "category": "Weapon", "item_id": 110000, "quantity": 1 }],
         "equipment_count": 0,
-        "equipment": [{ "slot": "RightHand1", "item_id": 110000, "upgrade": 0 }]
+        "equipment": [{ "slot": "RightHand1", "item_id": 110000, "upgrade": 0 }],
+        "stats": {
+          "vigor": 0, "mind": 0, "endurance": 0, "strength": 0,
+          "dexterity": 0, "intelligence": 0, "faith": 0, "arcane": 0,
+          "runes": 0, "runes_memory": 0,
+          "scadutree_level": 0, "spirit_ash_level": 0
+        }
       },
       "oracle": "<how each expected fact was independently verified>"
     }
@@ -33,6 +39,7 @@
     "held_common_count / held_key_count": "OPTIONAL exact len() of held_inventory / held_key_items. Cross-check against the reader export's inventory.common_item_count / key_item_count (the save's distinct counts). A mismatch means the GaItem decode dropped or invented a held item.",
     "items": "OPTIONAL. Targeted known-truth held items — the inventory analogue of `flags`. Each { category, item_id, quantity } is searched across held_inventory + held_key_items; category is \"Weapon\"/\"Armor\"/\"Accessory\"/\"Item\"/\"Aow\". Source them from the reader export (weapons keep their reinforced item_id).",
     "equipment_count": "OPTIONAL exact len() of equipment = count of occupied fact-relevant slots in the reader export's equipment block (right/left hand, arrows, bolts, head/chest/arms/legs, talismans). Exclude quick_slots and pouch — they are not equipment facts. 'Unarmed' hand slots carry item_id 110000 and count as occupied.",
-    "equipment": "OPTIONAL. Targeted per-slot known-truth. Each { slot, item_id, upgrade? } is matched by `slot` (\"RightHand1\"..\"RightHand3\", \"LeftHand1\"..\"LeftHand3\", \"Arrow1\"/\"Arrow2\", \"Bolt1\"/\"Bolt2\", \"Head\"/\"Chest\"/\"Arms\"/\"Legs\", \"Talisman1\"..\"Talisman4\"). `item_id` is the equipped item's id (weapons keep the full reinforced value). `upgrade` is OPTIONAL — assert it only for weapons (= item_id % 100); omit for armor/projectiles/talismans (the fact reports 0, but the reader export's upgrade_level for non-weapons is a display artifact)."
+    "equipment": "OPTIONAL. Targeted per-slot known-truth. Each { slot, item_id, upgrade? } is matched by `slot` (\"RightHand1\"..\"RightHand3\", \"LeftHand1\"..\"LeftHand3\", \"Arrow1\"/\"Arrow2\", \"Bolt1\"/\"Bolt2\", \"Head\"/\"Chest\"/\"Arms\"/\"Legs\", \"Talisman1\"..\"Talisman4\"). `item_id` is the equipped item's id (weapons keep the full reinforced value). `upgrade` is OPTIONAL — assert it only for weapons (= item_id % 100); omit for armor/projectiles/talismans (the fact reports 0, but the reader export's upgrade_level for non-weapons is a display artifact).",
+    "stats": "OPTIONAL. The scalar character sheet. Pin only the fields you have an INDEPENDENT export oracle for — each is checked exactly: the 8 attributes and scadutree_level/spirit_ash_level (reader ExportStats), runes/runes_memory (the export's general block souls/souls_memory), and hp/max_hp/fp/max_fp/stamina/max_stamina (present on newer exports only). base_max_* have no export oracle and are not pinned. Whenever a stats block is present the harness ALSO enforces universal invariants regardless of which fields you pinned: maxes > 0, current <= max, base-max <= max, and runes_memory >= runes. Note level/class_id are identity, not stats."
   }
 }

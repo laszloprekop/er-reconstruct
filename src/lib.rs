@@ -36,5 +36,6 @@ mod wasm;
 pub use facts::{EquipSlot, EquipmentFact};
 pub use facts::{FlagFact, FlagStatus};
 pub use facts::{InventoryFact, ItemCategory};
+pub use facts::Stats;
 pub use facts::{BOSS_FLAG_IDS, DUNGEON_PICKUP_FLAG_IDS, GRACE_FLAG_IDS, WORLD_PICKUP_FLAG_IDS};
 pub use reconstruct::{reconstruct, ReconstructError, ReconstructedCharacter};

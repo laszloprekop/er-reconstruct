@@ -17,6 +17,7 @@ pub mod equipment;
 pub mod flag_ids;
 pub mod inventory;
 pub mod pickup_ids;
+pub mod stats;
 
 use wasm_event_flags::{FlagState, ResolvedFlags};
 
@@ -26,6 +27,7 @@ pub use inventory::{
     resolve_held_common, resolve_held_key_items, InventoryFact, ItemCategory,
 };
 pub use pickup_ids::{DUNGEON_PICKUP_FLAG_IDS, WORLD_PICKUP_FLAG_IDS};
+pub use stats::{resolve_stats, Stats};
 
 /// A flag's resolved tri-state, serialized by name (`"Set"`/`"Clear"`/
 /// `"Unknown"`). A local mirror of `wasm_event_flags::FlagState` so the fact set

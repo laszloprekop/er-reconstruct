@@ -284,6 +284,65 @@ fn corpus_saves_reconstruct_to_known_truth() {
             }
         }
 
+        // Stats facts (slice §04). The manifest pins the fields with an INDEPENDENT
+        // export oracle (the reader's ExportStats attributes + DLC levels, its general
+        // block's runes, and — on newer exports — the hp/fp/stamina current/max); every
+        // pinned field is checked exactly. base_max has no export oracle, so it (and the
+        // rest) is guarded by universal known-truth INVARIANTS that no correct save can
+        // violate: an active character has positive maxes; a current value never exceeds
+        // its max; base-max is the unbuffed floor so it never exceeds max; and lifetime
+        // runes are never fewer than runes currently held. A field-swap or wrong-offset
+        // decode trips one of these.
+        if let Some(st) = expected["stats"].as_object() {
+            let s = &got.stats;
+            let exact: [(&str, u64); 18] = [
+                ("vigor", s.vigor.into()),
+                ("mind", s.mind.into()),
+                ("endurance", s.endurance.into()),
+                ("strength", s.strength.into()),
+                ("dexterity", s.dexterity.into()),
+                ("intelligence", s.intelligence.into()),
+                ("faith", s.faith.into()),
+                ("arcane", s.arcane.into()),
+                ("runes", s.runes.into()),
+                ("runes_memory", s.runes_memory.into()),
+                ("hp", s.hp.into()),
+                ("max_hp", s.max_hp.into()),
+                ("fp", s.fp.into()),
+                ("max_fp", s.max_fp.into()),
+                ("stamina", s.stamina.into()),
+                ("max_stamina", s.max_stamina.into()),
+                ("scadutree_level", s.scadutree_level.into()),
+                ("spirit_ash_level", s.spirit_ash_level.into()),
+            ];
+            for (key, got_val) in exact {
+                if let Some(want) = st.get(key).and_then(Value::as_u64) {
+                    assert_eq!(
+                        got_val, want,
+                        "stats.{key} mismatch for {save_name}#{slot} (reconstruct {got_val} vs oracle {want})"
+                    );
+                }
+            }
+            assert!(
+                s.max_hp > 0 && s.max_fp > 0 && s.max_stamina > 0,
+                "stats maxes must be positive for active {save_name}#{slot}"
+            );
+            assert!(
+                s.hp <= s.max_hp && s.fp <= s.max_fp && s.stamina <= s.max_stamina,
+                "stats current exceeds max for {save_name}#{slot}"
+            );
+            assert!(
+                s.base_max_hp <= s.max_hp
+                    && s.base_max_fp <= s.max_fp
+                    && s.base_max_stamina <= s.max_stamina,
+                "stats base-max exceeds max for {save_name}#{slot}"
+            );
+            assert!(
+                s.runes_memory >= s.runes,
+                "stats lifetime runes below held for {save_name}#{slot}"
+            );
+        }
+
         // `flags` pins per-id known-truth across ALL fact families (grace, boss,
         // world/dungeon pickup) — the id identifies which.
         if let Some(flags) = expected["flags"].as_array() {
