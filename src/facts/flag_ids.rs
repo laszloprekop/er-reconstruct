@@ -82,17 +82,24 @@ pub const GRACE_FLAG_IDS: &[u32] = &[
 /// `boss_family`). 164 unique ids (167 reader rows; 3 flags are shared between
 /// two encounters).
 ///
-/// The last 10 (18000800, 30150800, 30160800, 31200800, 32000800, 34120800,
-/// 35000850, 1039440800, 1041530800, 1051400800) were reconciled against the game's
-/// `GameAreaParam.defeatBossFlagId` — real boss-defeat flags previously missing from
-/// the reader's `BOSSES` table (three were also observed Set on the mid-game corpus
-/// save). Wrong-suffix reader ids (e.g. Elden Beast `19000810`, Death Rite Birds) and
-/// mis-identified ids are left for a follow-up verified against a defeated-boss save.
+/// Reconciled against the game's authoritative `GameAreaParam.defeatBossFlagId`
+/// (regulation 1.16.1). Two changes vs the pre-reconciliation table:
+/// - 10 real boss-defeat flags added that the reader's `BOSSES` had missed
+///   (18000800, 30150800, 30160800, 31200800, 32000800, 34120800, 35000850,
+///   1039440800, 1041530800, 1051400800; three observed Set on the mid-game corpus).
+/// - 3 wrong-suffix reader ids corrected to their real defeat flag — Elden Beast
+///   19000810→19000800, Death Rite Bird (Liurnia N) 1036450800→1036450340, Deathbird
+///   (Liurnia S) 1037420800→1037420340. The prior ids were absent from every
+///   GameAreaParam boss-flag field; confidence LIKELY (the Set-on-defeat flip is
+///   unobserved — no available save has these bosses defeated).
+/// Still open: ~27 DLC + 21 base defeat flags neither app tracks, 10 core ids absent
+/// from GameAreaParam (plausibly EMEVD-tracked field bosses), and 2 mis-identified
+/// ids elden-map carries (1034420800, 1037510800).
 pub const BOSS_FLAG_IDS: &[u32] = &[
     10000800, 10000850, 10010800, 11000800, 11000850, 11050800, 11050850, 12010800,
     12010850, 12020800, 12020830, 12020850, 12030390, 12030800, 12030850, 12040800,
     12050800, 12080800, 12090800, 13000800, 13000830, 13000850, 14000800, 14000850,
-    15000800, 15000850, 16000800, 16000850, 16000860, 18000800, 18000850, 19000810,
+    15000800, 15000850, 16000800, 16000850, 16000860, 18000800, 18000850, 19000800,
     30000800, 30010800, 30020800, 30030800, 30040800, 30050800, 30050850, 30060800,
     30070800, 30080800, 30090800, 30100800, 30110800, 30120800, 30130800, 30140800,
     30150800, 30160800, 30170800, 30180800, 30190800, 30200800, 31000800, 31010800,
@@ -101,7 +108,7 @@ pub const BOSS_FLAG_IDS: &[u32] = &[
     31210800, 31220800, 32000800, 32010800, 32020800, 32040800, 32050800, 32070800,
     32080800, 32110800, 34120800, 34130800, 34140850, 35000800, 35000850, 39200800,
     1033420800, 1033430800, 1033450800, 1034450800, 1034480800, 1034500800, 1035420800, 1035500800,
-    1035530800, 1036450800, 1036480800, 1036500800, 1036540800, 1037420800, 1037460800, 1037530800,
+    1035530800, 1036450340, 1036480800, 1036500800, 1036540800, 1037420340, 1037460800, 1037530800,
     1037540810, 1038410800, 1038480800, 1038510800, 1038520800, 1039430800, 1039440800, 1039500800,
     1039510800, 1039540800, 1040520800, 1040530800, 1041500800, 1041510800, 1041520800, 1041530800,
     1042330800, 1042360800, 1042370800, 1042380800, 1042380850, 1042550800, 1043300800, 1043330800,
