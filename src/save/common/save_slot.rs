@@ -1474,6 +1474,11 @@ pub struct SaveSlot {
     _cs_dlc: [u8; 0x32],
     _0x80: [u8; 0x80],
     _rest: Vec<u8>,
+    /// Absolute byte offset of this slot's raw `0x280000` blob within the whole save
+    /// file. Not an on-disk field — captured during `read` so a fact resolver can hand
+    /// the raw slot to `wasm_event_flags::extract_player_position_impl` (the signature
+    /// scan) without the parser retaining 2.5 MB per slot. The `Write` path ignores it.
+    pub raw_slot_start: usize,
 }
 
 impl Default for SaveSlot {
@@ -1527,6 +1532,7 @@ impl Default for SaveSlot {
             _cs_dlc: [0x0; 0x32],
             _0x80: [0x0; 0x80],
             _rest: Default::default(),
+            raw_slot_start: 0,
         }
     }
 }
@@ -1537,6 +1543,9 @@ impl Read for SaveSlot {
 
         // Slot end position
         let end = br.pos + 0x280000;
+        // The slot's raw blob spans [br.pos, end); remember where it starts so a fact
+        // resolver can re-slice it from the save bytes (player-position scan).
+        save_slot.raw_slot_start = br.pos;
 
         // Unknown
         save_slot.ver = br.read_u32()?;

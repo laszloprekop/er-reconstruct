@@ -24,13 +24,17 @@ use wasm_event_flags::ResolvedFlags;
 use crate::facts::{
     resolve_bosses, resolve_dungeon_pickups, resolve_equipment, resolve_graces,
     resolve_held_common, resolve_held_key_items, resolve_stats, resolve_world_pickups,
-    EquipmentFact, FlagFact, InventoryFact, Stats,
+    resolve_world_position, EquipmentFact, FlagFact, InventoryFact, Stats, WorldPosition,
 };
 use crate::read::read::Read;
 use crate::save::save::save::Save;
 
 /// The number of character slots a save carries.
 const SLOT_COUNT: usize = 10;
+
+/// The size of one slot's raw blob — the region the player-position scan searches.
+/// Matches the `0x280000` stride `SaveSlot::read` consumes per slot.
+const SLOT_DATA_LEN: usize = 0x280000;
 
 /// One slot's reconstructed facts (ADR-0010). Append-only across slices.
 ///
@@ -63,10 +67,14 @@ const SLOT_COUNT: usize = 10;
 /// rune totals, the hp/fp/stamina triples, and the DLC blessing levels — read straight
 /// off the save. `level`/`class_id` stay in identity above, not duplicated here.
 ///
-/// No display names, no coordinates: id → item/name is a Canonical Name lookup in
+/// `world_position` (slice §09) is where the character is standing — the union add that
+/// only elden-map surfaced. `None` when no position could be resolved. Its coordinates
+/// are `f32`, so this struct is `PartialEq` but not `Eq`.
+///
+/// No display names, no coordinates *derived into labels*: id → item/name is a Canonical Name lookup in
 /// each app's Enrichment stage. Later slices append fields; they never change the
 /// ones here.
-#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
+#[derive(Debug, Clone, PartialEq, serde::Serialize)]
 pub struct ReconstructedCharacter {
     pub name: String,
     pub level: u32,
@@ -79,6 +87,7 @@ pub struct ReconstructedCharacter {
     pub held_key_items: Vec<InventoryFact>,
     pub equipment: Vec<EquipmentFact>,
     pub stats: Stats,
+    pub world_position: Option<WorldPosition>,
 }
 
 /// Why a reconstruction could not be produced. Distinct from a *fact* that a
@@ -168,6 +177,16 @@ pub fn reconstruct(bytes: &[u8], slot: usize) -> Result<ReconstructedCharacter, 
         _ => Vec::new(),
     };
 
+    // World position trails the dynamic event-flags region, so the shared resolver
+    // scans for it in the raw slot blob (re-sliced from the save bytes by the offset
+    // captured during parse). A missing/short blob or a no-signature scan yields None,
+    // never guessed coordinates.
+    let world_position = save
+        .save_type
+        .get_raw_slot_start(slot)
+        .and_then(|start| bytes.get(start..start + SLOT_DATA_LEN))
+        .and_then(resolve_world_position);
+
     Ok(ReconstructedCharacter {
         name: decode_name(&pgd.character_name),
         level: pgd.level,
@@ -180,6 +199,7 @@ pub fn reconstruct(bytes: &[u8], slot: usize) -> Result<ReconstructedCharacter, 
         held_key_items,
         equipment,
         stats: resolve_stats(pgd),
+        world_position,
     })
 }
 

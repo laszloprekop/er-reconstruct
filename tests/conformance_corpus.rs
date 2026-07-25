@@ -343,6 +343,39 @@ fn corpus_saves_reconstruct_to_known_truth() {
             );
         }
 
+        // World-position facts (slice §09). The oracle is elden-map's extractor, which
+        // is the same shared `extract_player_position` scan the core now calls — so this
+        // guards the PLUMBING (the raw-slot-blob offset + slice) more than the resolver:
+        // a wrong offset reads another slot's or garbage bytes and the position moves or
+        // vanishes. map_id is pinned exactly (robust integer known-truth), and x/y/z are
+        // checked finite, in the scan's valid range, and near the known anchor (a loose
+        // tolerance, so float formatting is never the thing under test).
+        if let Some(wp_want) = expected["world_position"].as_object() {
+            let wp = got.world_position.as_ref().unwrap_or_else(|| {
+                panic!("world_position resolved None for {save_name}#{slot}")
+            });
+            if let Some(map) = wp_want["map_id"].as_array() {
+                let want: Vec<u64> = map.iter().filter_map(Value::as_u64).collect();
+                let got_map: Vec<u64> = wp.map_id.iter().map(|&b| b as u64).collect();
+                assert_eq!(
+                    got_map, want,
+                    "world_position.map_id mismatch for {save_name}#{slot}"
+                );
+            }
+            for (name, got_v, key) in [("x", wp.x, "x"), ("y", wp.y, "y"), ("z", wp.z, "z")] {
+                assert!(
+                    got_v.is_finite() && got_v.abs() < 10_000.0,
+                    "world_position.{name} out of range ({got_v}) for {save_name}#{slot}"
+                );
+                if let Some(want) = wp_want[key].as_f64() {
+                    assert!(
+                        (f64::from(got_v) - want).abs() < 0.5,
+                        "world_position.{name} {got_v} not near anchor {want} for {save_name}#{slot}"
+                    );
+                }
+            }
+        }
+
         // `flags` pins per-id known-truth across ALL fact families (grace, boss,
         // world/dungeon pickup) — the id identifies which.
         if let Some(flags) = expected["flags"].as_array() {

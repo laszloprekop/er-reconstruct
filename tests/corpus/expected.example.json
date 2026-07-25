@@ -25,6 +25,10 @@
           "dexterity": 0, "intelligence": 0, "faith": 0, "arcane": 0,
           "runes": 0, "runes_memory": 0,
           "scadutree_level": 0, "spirit_ash_level": 0
+        },
+        "world_position": {
+          "map_id": [0, 0, 0, 0],
+          "x": 0.0, "y": 0.0, "z": 0.0
         }
       },
       "oracle": "<how each expected fact was independently verified>"
@@ -40,6 +44,7 @@
     "items": "OPTIONAL. Targeted known-truth held items — the inventory analogue of `flags`. Each { category, item_id, quantity } is searched across held_inventory + held_key_items; category is \"Weapon\"/\"Armor\"/\"Accessory\"/\"Item\"/\"Aow\". Source them from the reader export (weapons keep their reinforced item_id).",
     "equipment_count": "OPTIONAL exact len() of equipment = count of occupied fact-relevant slots in the reader export's equipment block (right/left hand, arrows, bolts, head/chest/arms/legs, talismans). Exclude quick_slots and pouch — they are not equipment facts. 'Unarmed' hand slots carry item_id 110000 and count as occupied.",
     "equipment": "OPTIONAL. Targeted per-slot known-truth. Each { slot, item_id, upgrade? } is matched by `slot` (\"RightHand1\"..\"RightHand3\", \"LeftHand1\"..\"LeftHand3\", \"Arrow1\"/\"Arrow2\", \"Bolt1\"/\"Bolt2\", \"Head\"/\"Chest\"/\"Arms\"/\"Legs\", \"Talisman1\"..\"Talisman4\"). `item_id` is the equipped item's id (weapons keep the full reinforced value). `upgrade` is OPTIONAL — assert it only for weapons (= item_id % 100); omit for armor/projectiles/talismans (the fact reports 0, but the reader export's upgrade_level for non-weapons is a display artifact).",
-    "stats": "OPTIONAL. The scalar character sheet. Pin only the fields you have an INDEPENDENT export oracle for — each is checked exactly: the 8 attributes and scadutree_level/spirit_ash_level (reader ExportStats), runes/runes_memory (the export's general block souls/souls_memory), and hp/max_hp/fp/max_fp/stamina/max_stamina (present on newer exports only). base_max_* have no export oracle and are not pinned. Whenever a stats block is present the harness ALSO enforces universal invariants regardless of which fields you pinned: maxes > 0, current <= max, base-max <= max, and runes_memory >= runes. Note level/class_id are identity, not stats."
+    "stats": "OPTIONAL. The scalar character sheet. Pin only the fields you have an INDEPENDENT export oracle for — each is checked exactly: the 8 attributes and scadutree_level/spirit_ash_level (reader ExportStats), runes/runes_memory (the export's general block souls/souls_memory), and hp/max_hp/fp/max_fp/stamina/max_stamina (present on newer exports only). base_max_* have no export oracle and are not pinned. Whenever a stats block is present the harness ALSO enforces universal invariants regardless of which fields you pinned: maxes > 0, current <= max, base-max <= max, and runes_memory >= runes. Note level/class_id are identity, not stats.",
+    "world_position": "OPTIONAL. Where the character is standing. The oracle is elden-map's extract_player_position (the same shared scan the core calls), so this mainly guards the raw-slot-blob offset plumbing. `map_id` (4 bytes) is pinned exactly; `x`/`y`/`z` are approximate anchors checked within a loose tolerance (0.5) and for being finite + in the scan's valid range. A present block also asserts world_position is not None. Omit for a slot with no resolvable position (e.g. a brand-new character)."
   }
 }

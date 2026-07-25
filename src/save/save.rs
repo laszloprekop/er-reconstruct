@@ -115,6 +115,19 @@ pub mod save {
             }
         }
 
+        /// Absolute byte offset of a slot's raw `0x280000` blob within the save file,
+        /// or `None` for a save that did not parse. A fact resolver re-slices the blob
+        /// from the original save bytes to run the player-position signature scan
+        /// (`wasm_event_flags::extract_player_position_impl`), which needs the whole
+        /// slot, not a parsed sub-struct.
+        pub fn get_raw_slot_start(&self, index: usize) -> Option<usize> {
+            match self {
+                SaveType::Unknown => None,
+                SaveType::PC(pc_save) => Some(pc_save.save_slots[index].save_slot.raw_slot_start),
+                SaveType::PlayStation(ps_save) => Some(ps_save.save_slots[index].raw_slot_start),
+            }
+        }
+
         /// Get a reference to the storage box inventory data for a specific slot
         pub fn get_storage_inventory(&self, index: usize) -> Option<&EquipInventoryData> {
             match self {
