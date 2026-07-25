@@ -22,7 +22,8 @@ use binary_reader::BinaryReader;
 use wasm_event_flags::ResolvedFlags;
 
 use crate::facts::{
-    resolve_bosses, resolve_dungeon_pickups, resolve_graces, resolve_world_pickups, FlagFact,
+    resolve_bosses, resolve_dungeon_pickups, resolve_graces, resolve_held_common,
+    resolve_held_key_items, resolve_world_pickups, FlagFact, InventoryFact,
 };
 use crate::read::read::Read;
 use crate::save::save::save::Save;
@@ -43,9 +44,18 @@ const SLOT_COUNT: usize = 10;
 /// unresolvable", not "clear". `world_pickups` and `dungeon_pickups` (slice #5)
 /// are the same shape keyed by `getItemFlagId`, routed to the pickup families;
 /// low/simple-flag world ids that belong to no pickup family read `Unknown`, as
-/// the reader shows them. No display names, no coordinates: id → item/name is a
-/// Canonical Name lookup in each app's Enrichment stage. Later slices append
-/// fields; they never change the ones here.
+/// the reader shows them.
+///
+/// `held_inventory` and `held_key_items` (slice #6) are the first **non-flag**
+/// facts: not tri-state bits but items *decoded* from the slot's held lists and its
+/// gaitem map (`facts::inventory`). Each is `{ category, item_id, quantity }`, keyed
+/// by item identity — never the GaItem handle, which churns (`CONTEXT.md`). The two
+/// mirror the save's own split: `held_inventory` is the common list, `held_key_items`
+/// the key-item list.
+///
+/// No display names, no coordinates: id → item/name is a Canonical Name lookup in
+/// each app's Enrichment stage. Later slices append fields; they never change the
+/// ones here.
 #[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
 pub struct ReconstructedCharacter {
     pub name: String,
@@ -55,6 +65,8 @@ pub struct ReconstructedCharacter {
     pub bosses: Vec<FlagFact>,
     pub world_pickups: Vec<FlagFact>,
     pub dungeon_pickups: Vec<FlagFact>,
+    pub held_inventory: Vec<InventoryFact>,
+    pub held_key_items: Vec<InventoryFact>,
 }
 
 /// Why a reconstruction could not be produced. Distinct from a *fact* that a
@@ -123,6 +135,19 @@ pub fn reconstruct(bytes: &[u8], slot: usize) -> Result<ReconstructedCharacter, 
     let event_flags = save.save_type.get_event_flags(slot);
     let resolved = event_flags.and_then(ResolvedFlags::from_event_flags);
 
+    // Held inventory is decoded, not flag-resolved: the common list needs the gaitem
+    // map to indirect weapon/armor/ash handles to their param ids. A layout that
+    // exposes neither yields empty lists (no character to decode), never a guess.
+    let held_inventory = match (save.save_type.get_inventory(slot), save.save_type.get_ga_items(slot)) {
+        (Some(inv), Some(ga_items)) => resolve_held_common(inv, ga_items),
+        _ => Vec::new(),
+    };
+    let held_key_items = save
+        .save_type
+        .get_inventory(slot)
+        .map(resolve_held_key_items)
+        .unwrap_or_default();
+
     Ok(ReconstructedCharacter {
         name: decode_name(&pgd.character_name),
         level: pgd.level,
@@ -131,6 +156,8 @@ pub fn reconstruct(bytes: &[u8], slot: usize) -> Result<ReconstructedCharacter, 
         bosses: resolve_bosses(resolved.as_ref()),
         world_pickups: resolve_world_pickups(resolved.as_ref()),
         dungeon_pickups: resolve_dungeon_pickups(resolved.as_ref()),
+        held_inventory,
+        held_key_items,
     })
 }
 

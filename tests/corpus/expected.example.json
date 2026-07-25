@@ -14,7 +14,10 @@
         "dungeon_pickups_total": 1950,
         "world_pickups_set_atleast": 0,
         "dungeon_pickups_set_atmost": 2000,
-        "flags": [{ "id": 10000800, "state": "Set" }]
+        "flags": [{ "id": 10000800, "state": "Set" }],
+        "held_common_count": 0,
+        "held_key_count": 0,
+        "items": [{ "category": "Weapon", "item_id": 110000, "quantity": 1 }]
       },
       "oracle": "<how each expected fact was independently verified>"
     }
@@ -24,6 +27,8 @@
     "bosses_set": "OPTIONAL. Expected count of Set (defeated) bosses. Cross-check against the reader export's events.bosses discovered tally, or known progression.",
     "world_pickups_total / dungeon_pickups_total": "OPTIONAL exact counts = the reader's machine-checked table sizes (unique getItemFlagIds). Verifies the core's tables loaded fully.",
     "world_pickups_set_atleast / _atmost, dungeon_pickups_set_atleast / _atmost": "OPTIONAL known-truth BOUNDS on the collected count (not exact — pickups have no full-enumeration oracle). Encode the multi-slot differential: floors for a progressed slot, ceilings for an early one. Loose enough to be unarguable, tight enough to catch all-Unknown/all-Clear/all-Set/wrong-family regressions.",
-    "flags": "OPTIONAL. Targeted per-id known-truth across ALL fact families (grace, boss, world/dungeon pickup). `state` is \"Set\", \"Clear\", or \"Unknown\". Unknown means position unresolvable (e.g. an uncalibrated DLC tile) — distinct from Clear. Pickup anchors: collection is monotonic, so an id collected:true in any earlier export must still be Set."
+    "flags": "OPTIONAL. Targeted per-id known-truth across ALL fact families (grace, boss, world/dungeon pickup). `state` is \"Set\", \"Clear\", or \"Unknown\". Unknown means position unresolvable (e.g. an uncalibrated DLC tile) — distinct from Clear. Pickup anchors: collection is monotonic, so an id collected:true in any earlier export must still be Set.",
+    "held_common_count / held_key_count": "OPTIONAL exact len() of held_inventory / held_key_items. Cross-check against the reader export's inventory.common_item_count / key_item_count (the save's distinct counts). A mismatch means the GaItem decode dropped or invented a held item.",
+    "items": "OPTIONAL. Targeted known-truth held items — the inventory analogue of `flags`. Each { category, item_id, quantity } is searched across held_inventory + held_key_items; category is \"Weapon\"/\"Armor\"/\"Accessory\"/\"Item\"/\"Aow\". Source them from the reader export (weapons keep their reinforced item_id)."
   }
 }

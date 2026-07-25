@@ -3,14 +3,14 @@ pub mod save {
     use binary_reader::BinaryReader;
     use crate::{
         read::read::Read, save::{
-            common::{ save_slot::{EquipInventoryData, PlayerGameData, SaveSlot}, user_data_10::ProfileSummary, user_data_11::UserData11 },
+            common::{ save_slot::{EquipInventoryData, GaItem, PlayerGameData, SaveSlot}, user_data_10::ProfileSummary, user_data_11::UserData11 },
             pc::pc_save::PCSave, 
             playstation::ps_save::PSSave, 
         }, util::regulation::Regulation
     };
     #[cfg(feature = "save-writeback")]
     use crate::{
-        save::common::save_slot::{EquipProjectileData, GaItem, GaItemData},
+        save::common::save_slot::{EquipProjectileData, GaItemData},
         util::bit::bit::set_bit,
         write::write::Write,
     };
@@ -86,6 +86,18 @@ pub mod save {
                 SaveType::Unknown => None,
                 SaveType::PC(pc_save) => Some(&pc_save.save_slots[index].save_slot.equip_inventory_data),
                 SaveType::PlayStation(ps_save) => Some(&ps_save.save_slots[index].equip_inventory_data),
+            }
+        }
+
+        /// Get a reference to the **gaitem map** for a specific slot — the array a
+        /// held weapon/armor/ash-of-war handle indirects through to reach its real
+        /// param id (`facts::inventory`). The two save layouts nest the slot
+        /// differently; this collapses that to one accessor, like `get_inventory`.
+        pub fn get_ga_items(&self, index: usize) -> Option<&[GaItem]> {
+            match self {
+                SaveType::Unknown => None,
+                SaveType::PC(pc_save) => Some(&pc_save.save_slots[index].save_slot.ga_items),
+                SaveType::PlayStation(ps_save) => Some(&ps_save.save_slots[index].ga_items),
             }
         }
 

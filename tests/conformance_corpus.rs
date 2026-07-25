@@ -15,8 +15,20 @@
 use std::fs;
 use std::path::PathBuf;
 
-use er_reconstruct::{FlagFact, FlagStatus};
+use er_reconstruct::{FlagFact, FlagStatus, InventoryFact, ItemCategory};
 use serde_json::Value;
+
+/// The manifest spells item categories with the same tokens `ItemCategory`
+/// serializes to.
+fn category_name(c: ItemCategory) -> &'static str {
+    match c {
+        ItemCategory::Weapon => "Weapon",
+        ItemCategory::Armor => "Armor",
+        ItemCategory::Accessory => "Accessory",
+        ItemCategory::Item => "Item",
+        ItemCategory::Aow => "Aow",
+    }
+}
 
 /// Count facts in the `Set` state — the reader's "discovered" tally. `Clear` and
 /// `Unknown` are both not-discovered; keeping `Unknown` out of the count is the
@@ -168,6 +180,46 @@ fn corpus_saves_reconstruct_to_known_truth() {
         }
         check_bound(&got.world_pickups, expected, "world_pickups_set", save_name, slot);
         check_bound(&got.dungeon_pickups, expected, "dungeon_pickups_set", save_name, slot);
+
+        // Held-inventory facts (slice #6). The counts cross-check against the reader
+        // export's distinct counts — a decode that dropped or invented a held item
+        // moves them. `items` pins specific known-truth held items (the inventory
+        // analogue of `flags`), searched across both held lists.
+        if let Some(want) = expected["held_common_count"].as_u64() {
+            assert_eq!(
+                got.held_inventory.len() as u64, want,
+                "held_common_count mismatch for {save_name}#{slot}"
+            );
+        }
+        if let Some(want) = expected["held_key_count"].as_u64() {
+            assert_eq!(
+                got.held_key_items.len() as u64, want,
+                "held_key_count mismatch for {save_name}#{slot}"
+            );
+        }
+        if let Some(items) = expected["items"].as_array() {
+            for want in items {
+                let category = want["category"].as_str().expect("item category");
+                let item_id = want["id"].as_u64().or_else(|| want["item_id"].as_u64())
+                    .expect("item_id") as u32;
+                let found = got
+                    .held_inventory
+                    .iter()
+                    .chain(got.held_key_items.iter())
+                    .find(|f: &&InventoryFact| {
+                        f.item_id == item_id && category_name(f.category) == category
+                    })
+                    .unwrap_or_else(|| {
+                        panic!("held item {category} {item_id} not found for {save_name}#{slot}")
+                    });
+                if let Some(qty) = want["quantity"].as_u64() {
+                    assert_eq!(
+                        u64::from(found.quantity), qty,
+                        "quantity mismatch for held item {category} {item_id} ({save_name}#{slot})"
+                    );
+                }
+            }
+        }
 
         // `flags` pins per-id known-truth across ALL fact families (grace, boss,
         // world/dungeon pickup) — the id identifies which.
