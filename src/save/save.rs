@@ -3,7 +3,7 @@ pub mod save {
     use binary_reader::BinaryReader;
     use crate::{
         read::read::Read, save::{
-            common::{ save_slot::{EquipInventoryData, GaItem, PlayerGameData, SaveSlot}, user_data_10::ProfileSummary, user_data_11::UserData11 },
+            common::{ save_slot::{ChrAsm2, EquipInventoryData, GaItem, PlayerGameData, SaveSlot}, user_data_10::ProfileSummary, user_data_11::UserData11 },
             pc::pc_save::PCSave, 
             playstation::ps_save::PSSave, 
         }, util::regulation::Regulation
@@ -98,6 +98,20 @@ pub mod save {
                 SaveType::Unknown => None,
                 SaveType::PC(pc_save) => Some(&pc_save.save_slots[index].save_slot.ga_items),
                 SaveType::PlayStation(ps_save) => Some(&ps_save.save_slots[index].ga_items),
+            }
+        }
+
+        /// Get a reference to the **equipment loadout handles** for a specific slot —
+        /// `chr_asm2`, the per-slot array of gaitem handles for the hands, projectiles,
+        /// armor, and talismans that are actually equipped (`facts::equipment`). Each
+        /// handle indirects through `get_ga_items` (weapons/armor) or XOR-decodes
+        /// directly (talismans), exactly like held inventory. Collapses the two save
+        /// layouts to one accessor, like `get_inventory`/`get_ga_items`.
+        pub fn get_chr_asm2(&self, index: usize) -> Option<&ChrAsm2> {
+            match self {
+                SaveType::Unknown => None,
+                SaveType::PC(pc_save) => Some(&pc_save.save_slots[index].save_slot.chr_asm2),
+                SaveType::PlayStation(ps_save) => Some(&ps_save.save_slots[index].chr_asm2),
             }
         }
 

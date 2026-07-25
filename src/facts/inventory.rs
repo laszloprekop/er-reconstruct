@@ -29,7 +29,9 @@ use crate::save::common::save_slot::{EquipInventoryData, EquipInventoryItem, GaI
 const CATEGORY_MASK: u32 = 0xf000_0000;
 const HANDLE_WEAPON: u32 = 0x8000_0000;
 const HANDLE_ARMOR: u32 = 0x9000_0000;
-const HANDLE_ACCESSORY: u32 = 0xa000_0000;
+/// Accessory (talisman) tag. `pub(crate)` because equipment talismans (slice #7)
+/// clear the same tag off their handle — the shared decode foundation, not a copy.
+pub(crate) const HANDLE_ACCESSORY: u32 = 0xa000_0000;
 const HANDLE_ITEM: u32 = 0xb000_0000;
 const HANDLE_AOW: u32 = 0xc000_0000;
 
@@ -39,7 +41,9 @@ const HANDLE_AOW: u32 = 0xc000_0000;
 /// `0x80000000`); the two direct categories clear it off the *handle* itself with the
 /// `InventoryGaitemType` tag (accessory `0xa0000000`, item `0xb0000000` = the
 /// `HANDLE_*` constants above). Weapons take the map `item_id` verbatim (reinforced).
-const ITEM_TYPE_ARMOR: u32 = 0x1000_0000;
+/// Armor item-type tag on the *gaitem-map* id. `pub(crate)` because equipment armor
+/// (slice #7) clears the same tag off the same indirected id — one decode, two callers.
+pub(crate) const ITEM_TYPE_ARMOR: u32 = 0x1000_0000;
 const ITEM_TYPE_AOW: u32 = 0x8000_0000;
 
 /// Which kind of item a held slot holds. A structural fact of the save (the handle's
@@ -71,7 +75,7 @@ pub struct InventoryFact {
 /// same linear find and `.unwrap()`s it — the save's own invariant is that every held
 /// indirection has a map entry. Here we return `None` on a miss and let the caller
 /// drop the slot rather than panic (ADR-0008/0010: refuse, don't guess).
-fn map_item_id(handle: u32, ga_items: &[GaItem]) -> Option<u32> {
+pub(crate) fn map_item_id(handle: u32, ga_items: &[GaItem]) -> Option<u32> {
     ga_items
         .iter()
         .find(|g| g.gaitem_handle == handle)

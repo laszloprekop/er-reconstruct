@@ -15,8 +15,32 @@
 use std::fs;
 use std::path::PathBuf;
 
-use er_reconstruct::{FlagFact, FlagStatus, InventoryFact, ItemCategory};
+use er_reconstruct::{EquipSlot, FlagFact, FlagStatus, InventoryFact, ItemCategory};
 use serde_json::Value;
+
+/// The manifest names equipment slots with the same tokens `EquipSlot` serializes to.
+fn slot_name(s: EquipSlot) -> &'static str {
+    match s {
+        EquipSlot::RightHand1 => "RightHand1",
+        EquipSlot::RightHand2 => "RightHand2",
+        EquipSlot::RightHand3 => "RightHand3",
+        EquipSlot::LeftHand1 => "LeftHand1",
+        EquipSlot::LeftHand2 => "LeftHand2",
+        EquipSlot::LeftHand3 => "LeftHand3",
+        EquipSlot::Arrow1 => "Arrow1",
+        EquipSlot::Arrow2 => "Arrow2",
+        EquipSlot::Bolt1 => "Bolt1",
+        EquipSlot::Bolt2 => "Bolt2",
+        EquipSlot::Head => "Head",
+        EquipSlot::Chest => "Chest",
+        EquipSlot::Arms => "Arms",
+        EquipSlot::Legs => "Legs",
+        EquipSlot::Talisman1 => "Talisman1",
+        EquipSlot::Talisman2 => "Talisman2",
+        EquipSlot::Talisman3 => "Talisman3",
+        EquipSlot::Talisman4 => "Talisman4",
+    }
+}
 
 /// The manifest spells item categories with the same tokens `ItemCategory`
 /// serializes to.
@@ -216,6 +240,45 @@ fn corpus_saves_reconstruct_to_known_truth() {
                     assert_eq!(
                         u64::from(found.quantity), qty,
                         "quantity mismatch for held item {category} {item_id} ({save_name}#{slot})"
+                    );
+                }
+            }
+        }
+
+        // Equipment facts (slice #7). `equipment_count` cross-checks against the
+        // reader export's occupied fact-relevant slots (hands, projectiles, the four
+        // armor pieces, talismans — NOT quick-slots/pouch, which are not equipment
+        // facts). "Unarmed" hand slots carry a real id (110000), so they count as
+        // occupied, exactly as the export shows them. Targeted `equipment` pins
+        // per-slot known-truth: item_id always, `upgrade` only where meaningful — the
+        // export over-computes `item_id % 100` for every item, so a talisman anchors
+        // its id alone (its "upgrade" in the export is a display artifact; the fact
+        // correctly reports 0).
+        if let Some(want) = expected["equipment_count"].as_u64() {
+            assert_eq!(
+                got.equipment.len() as u64, want,
+                "equipment_count mismatch for {save_name}#{slot}"
+            );
+        }
+        if let Some(items) = expected["equipment"].as_array() {
+            for want in items {
+                let slot_want = want["slot"].as_str().expect("equipment slot name");
+                let fact = got
+                    .equipment
+                    .iter()
+                    .find(|f| slot_name(f.slot) == slot_want)
+                    .unwrap_or_else(|| {
+                        panic!("equipment slot {slot_want} not occupied for {save_name}#{slot}")
+                    });
+                assert_eq!(
+                    u64::from(fact.item_id),
+                    want["item_id"].as_u64().expect("equipment item_id"),
+                    "equipment item_id mismatch at {slot_want} for {save_name}#{slot}"
+                );
+                if let Some(up) = want["upgrade"].as_u64() {
+                    assert_eq!(
+                        u64::from(fact.upgrade), up,
+                        "equipment upgrade mismatch at {slot_want} for {save_name}#{slot}"
                     );
                 }
             }

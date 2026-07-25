@@ -22,8 +22,9 @@ use binary_reader::BinaryReader;
 use wasm_event_flags::ResolvedFlags;
 
 use crate::facts::{
-    resolve_bosses, resolve_dungeon_pickups, resolve_graces, resolve_held_common,
-    resolve_held_key_items, resolve_world_pickups, FlagFact, InventoryFact,
+    resolve_bosses, resolve_dungeon_pickups, resolve_equipment, resolve_graces,
+    resolve_held_common, resolve_held_key_items, resolve_world_pickups, EquipmentFact, FlagFact,
+    InventoryFact,
 };
 use crate::read::read::Read;
 use crate::save::save::save::Save;
@@ -53,6 +54,11 @@ const SLOT_COUNT: usize = 10;
 /// mirror the save's own split: `held_inventory` is the common list, `held_key_items`
 /// the key-item list.
 ///
+/// `equipment` (slice #7) is what the character has *equipped* — the positional
+/// counterpart to held inventory, built on the same decode foundation. Each
+/// [`EquipmentFact`] names its slot (a hand, a projectile, an armor piece, a talisman)
+/// and carries item identity plus weapon upgrade; only occupied slots appear.
+///
 /// No display names, no coordinates: id → item/name is a Canonical Name lookup in
 /// each app's Enrichment stage. Later slices append fields; they never change the
 /// ones here.
@@ -67,6 +73,7 @@ pub struct ReconstructedCharacter {
     pub dungeon_pickups: Vec<FlagFact>,
     pub held_inventory: Vec<InventoryFact>,
     pub held_key_items: Vec<InventoryFact>,
+    pub equipment: Vec<EquipmentFact>,
 }
 
 /// Why a reconstruction could not be produced. Distinct from a *fact* that a
@@ -148,6 +155,14 @@ pub fn reconstruct(bytes: &[u8], slot: usize) -> Result<ReconstructedCharacter, 
         .map(resolve_held_key_items)
         .unwrap_or_default();
 
+    // Equipment shares the held-inventory decode foundation: the loadout handles in
+    // chr_asm2 indirect through the same gaitem map. Missing either layout yields an
+    // empty loadout, never a guess.
+    let equipment = match (save.save_type.get_chr_asm2(slot), save.save_type.get_ga_items(slot)) {
+        (Some(asm), Some(ga_items)) => resolve_equipment(asm, ga_items),
+        _ => Vec::new(),
+    };
+
     Ok(ReconstructedCharacter {
         name: decode_name(&pgd.character_name),
         level: pgd.level,
@@ -158,6 +173,7 @@ pub fn reconstruct(bytes: &[u8], slot: usize) -> Result<ReconstructedCharacter, 
         dungeon_pickups: resolve_dungeon_pickups(resolved.as_ref()),
         held_inventory,
         held_key_items,
+        equipment,
     })
 }
 

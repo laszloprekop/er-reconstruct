@@ -13,12 +13,14 @@
 //! bug that once reported 0 boss defeats on a finished character
 //! (`CONTEXT.md` → *Unknown*). Names for these ids stay in each app's Enrichment.
 
+pub mod equipment;
 pub mod flag_ids;
 pub mod inventory;
 pub mod pickup_ids;
 
 use wasm_event_flags::{FlagState, ResolvedFlags};
 
+pub use equipment::{resolve_equipment, EquipSlot, EquipmentFact};
 pub use flag_ids::{BOSS_FLAG_IDS, GRACE_FLAG_IDS};
 pub use inventory::{
     resolve_held_common, resolve_held_key_items, InventoryFact, ItemCategory,

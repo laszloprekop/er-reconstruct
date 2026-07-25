@@ -17,7 +17,9 @@
         "flags": [{ "id": 10000800, "state": "Set" }],
         "held_common_count": 0,
         "held_key_count": 0,
-        "items": [{ "category": "Weapon", "item_id": 110000, "quantity": 1 }]
+        "items": [{ "category": "Weapon", "item_id": 110000, "quantity": 1 }],
+        "equipment_count": 0,
+        "equipment": [{ "slot": "RightHand1", "item_id": 110000, "upgrade": 0 }]
       },
       "oracle": "<how each expected fact was independently verified>"
     }
@@ -29,6 +31,8 @@
     "world_pickups_set_atleast / _atmost, dungeon_pickups_set_atleast / _atmost": "OPTIONAL known-truth BOUNDS on the collected count (not exact — pickups have no full-enumeration oracle). Encode the multi-slot differential: floors for a progressed slot, ceilings for an early one. Loose enough to be unarguable, tight enough to catch all-Unknown/all-Clear/all-Set/wrong-family regressions.",
     "flags": "OPTIONAL. Targeted per-id known-truth across ALL fact families (grace, boss, world/dungeon pickup). `state` is \"Set\", \"Clear\", or \"Unknown\". Unknown means position unresolvable (e.g. an uncalibrated DLC tile) — distinct from Clear. Pickup anchors: collection is monotonic, so an id collected:true in any earlier export must still be Set.",
     "held_common_count / held_key_count": "OPTIONAL exact len() of held_inventory / held_key_items. Cross-check against the reader export's inventory.common_item_count / key_item_count (the save's distinct counts). A mismatch means the GaItem decode dropped or invented a held item.",
-    "items": "OPTIONAL. Targeted known-truth held items — the inventory analogue of `flags`. Each { category, item_id, quantity } is searched across held_inventory + held_key_items; category is \"Weapon\"/\"Armor\"/\"Accessory\"/\"Item\"/\"Aow\". Source them from the reader export (weapons keep their reinforced item_id)."
+    "items": "OPTIONAL. Targeted known-truth held items — the inventory analogue of `flags`. Each { category, item_id, quantity } is searched across held_inventory + held_key_items; category is \"Weapon\"/\"Armor\"/\"Accessory\"/\"Item\"/\"Aow\". Source them from the reader export (weapons keep their reinforced item_id).",
+    "equipment_count": "OPTIONAL exact len() of equipment = count of occupied fact-relevant slots in the reader export's equipment block (right/left hand, arrows, bolts, head/chest/arms/legs, talismans). Exclude quick_slots and pouch — they are not equipment facts. 'Unarmed' hand slots carry item_id 110000 and count as occupied.",
+    "equipment": "OPTIONAL. Targeted per-slot known-truth. Each { slot, item_id, upgrade? } is matched by `slot` (\"RightHand1\"..\"RightHand3\", \"LeftHand1\"..\"LeftHand3\", \"Arrow1\"/\"Arrow2\", \"Bolt1\"/\"Bolt2\", \"Head\"/\"Chest\"/\"Arms\"/\"Legs\", \"Talisman1\"..\"Talisman4\"). `item_id` is the equipped item's id (weapons keep the full reinforced value). `upgrade` is OPTIONAL — assert it only for weapons (= item_id % 100); omit for armor/projectiles/talismans (the fact reports 0, but the reader export's upgrade_level for non-weapons is a display artifact)."
   }
 }
